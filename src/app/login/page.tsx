@@ -1,6 +1,6 @@
 'use client';
 
-import { signInWithMagicLink } from '@/app/auth-actions'
+import { signIn } from '@/app/auth-actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -48,10 +48,21 @@ export default function LoginPage() {
                                         className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus-visible:ring-black dark:focus-visible:ring-white h-12 rounded-none"
                                     />
                                 </div>
+                                <div className="grid gap-3 mt-4">
+                                    <Label htmlFor="password" className="text-black/80 dark:text-white/80 font-bold">{t('auth.passwordLabel') || 'Password'}</Label>
+                                    <Input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        placeholder="••••••••"
+                                        required
+                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus-visible:ring-black dark:focus-visible:ring-white h-12 rounded-none"
+                                    />
+                                </div>
 
                                 <div className="flex flex-col gap-4 mt-2">
-                                    <Button formAction={signInWithMagicLink} className="w-full h-12 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold rounded-none border-0 transition-all">
-                                        <Mail className="w-4 h-4 mr-2" /> {t('auth.sendMagicLink')}
+                                    <Button formAction={signIn} className="w-full h-12 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold rounded-none border-0 transition-all">
+                                        {t('auth.login') || 'Sign In'}
                                     </Button>
 
                                     <div className="relative my-4">
