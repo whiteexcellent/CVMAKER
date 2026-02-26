@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signInWithMagicLink } from '@/app/auth-actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,8 +13,11 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { useTranslation } from '@/components/I18nProvider'
 import { LanguageToggle } from '@/components/LanguageToggle'
 
-export default function LoginPage() {
+function LoginContent() {
     const { t } = useTranslation();
+    const searchParams = useSearchParams();
+    const message = searchParams.get('message');
+    const error = searchParams.get('error');
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-white dark:bg-black text-black dark:text-white font-sans selection:bg-black/10 dark:selection:bg-white/20 transition-colors duration-300">
@@ -36,6 +41,16 @@ export default function LoginPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent className="pb-8 px-8">
+                            {message === 'account_exists' && (
+                                <div className="mb-6 p-4 bg-black/5 dark:bg-white/5 border border-black/20 dark:border-white/20 text-sm font-bold">
+                                    {t('auth.accountExists')}
+                                </div>
+                            )}
+                            {error === 'user_not_found' && (
+                                <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-sm font-bold">
+                                    {t('auth.userNotFound')}
+                                </div>
+                            )}
                             <form className="grid gap-6">
                                 <div className="grid gap-3">
                                     <Label htmlFor="email" className="text-black/80 dark:text-white/80 font-bold">{t('auth.emailLabel')}</Label>
@@ -73,5 +88,13 @@ export default function LoginPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function LoginPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-white dark:bg-black" />}>
+            <LoginContent />
+        </Suspense>
     )
 }

@@ -10,12 +10,42 @@ export async function GET(request: Request) {
 
     if (code) {
         const supabase = await createClient()
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
+        const { data: authData, error: authError } = await supabase.auth.exchangeCodeForSession(code)
+
+        if (!authError && authData?.user) {
+            const user = authData.user;
+
+            // FAILSAFE: Ensure a profile exists in case the database trigger failed
+            const { data: profile } = await supabase
+                .from('profiles')
+                .select('id')
+                .eq('id', user.id)
+                .single();
+
+            if (!profile) {
+                console.log(`Failsafe: Creating missing profile for user ${user.id}`);
+                // Create profile
+                await supabase.from('profiles').insert({
+                    id: user.id,
+                    email: user.email!,
+                    full_name: user.user_metadata?.full_name || '',
+                    total_credits: 2, // Signup bonus
+                    daily_credits: 1,
+                    last_credit_reset: new Date().toISOString()
+                });
+
+                // Record transaction
+                await supabase.from('credit_transactions').insert({
+                    user_id: user.id,
+                    amount: 2,
+                    type: 'signup_bonus'
+                });
+            }
+
             const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
             const isLocalEnv = process.env.NODE_ENV === 'development'
+
             if (isLocalEnv) {
-                // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
                 return NextResponse.redirect(`${origin}${next}`)
             } else if (forwardedHost) {
                 return NextResponse.redirect(`https://${forwardedHost}${next}`)

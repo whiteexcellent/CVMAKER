@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
 export async function createClient() {
     const cookieStore = await cookies()
@@ -26,4 +27,24 @@ export async function createClient() {
             },
         }
     )
+}
+
+/**
+ * Creates a Supabase client with admin privileges (Service Role Key)
+ * WARNING: This should ONLY be used in server-side safe environments (Actions, API Routes)
+ */
+export async function createAdminClient() {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceRoleKey) {
+        throw new Error('Supabase admin credentials are missing from environment variables.')
+    }
+
+    return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    })
 }
