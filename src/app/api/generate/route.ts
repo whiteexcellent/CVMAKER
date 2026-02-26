@@ -197,14 +197,36 @@ Return the filtered, highly relevant experience text. If everything is relevant,
             // ====================================================================================================
             let ragContext = "No specific RAG examples found.";
             try {
+                // Helper to generate a deterministic pseudo-random 1536-d vector based on a string
                 // In production, this would be: await openai.embeddings.create({ input: targetRole, model: 'text-embedding-3-small' });
-                // We use a mock array to test the pgvector RPC integration logic safely.
-                const mockQueryEmbedding = Array.from({ length: 1536 }, () => (Math.random() * 2 - 1) * 0.1);
+                function generateMockEmbedding(str: string) {
+                    let hash = 0;
+                    for (let i = 0; i < str.length; i++) {
+                        hash = (hash << 5) - hash + str.charCodeAt(i);
+                        hash |= 0;
+                    }
+
+                    // Seed a basic RNG
+                    function rng(seed: number) {
+                        let s = seed;
+                        return function () {
+                            s = Math.sin(s) * 10000;
+                            return s - Math.floor(s);
+                        }
+                    }
+
+                    const randomFunc = rng(hash);
+                    // Generate 1536 dims, normalized between -1 and 1
+                    return Array.from({ length: 1536 }, () => (randomFunc() * 2) - 1);
+                }
+
+                // Use the deterministic hash so RAG vectors can actually be matched by the database
+                const mockQueryEmbedding = generateMockEmbedding(targetRole || "Software Engineer");
 
                 const { data: ragData, error: ragError } = await supabase.rpc('match_resume_knowledge', {
                     query_embedding: mockQueryEmbedding,
-                    match_threshold: 0.5, // 50% similarity threshold
-                    match_count: 3
+                    match_threshold: 0.0, // 0.0 to guarantee we retrieve the mock seed data
+                    match_count: 2
                 });
 
                 if (!ragError && ragData && ragData.length > 0) {

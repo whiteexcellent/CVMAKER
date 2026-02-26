@@ -1,2 +1,0 @@
-﻿src/app/api/dev/sandbox-login/route.ts(27,13): error TS2322: Type 'string | undefined' is not assignable to type 'string | null'.
-  Type 'undefined' is not assignable to type 'string | null'.
