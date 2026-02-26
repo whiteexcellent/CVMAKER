@@ -20,19 +20,13 @@ export default function SettingsClient({
     subscriptionTier: string;
 }) {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, locale, setLocale } = useTranslation();
     const [isDeleting, setIsDeleting] = useState(false);
     const [isManagingBilling, setIsManagingBilling] = useState(false);
-    // Language logic placeholder - tying into your existing i18n
-    const [language, setLanguage] = useState(
-        typeof window !== 'undefined' ? localStorage.getItem('language') || 'English' : 'English'
-    );
 
-    const handleLanguageChange = (val: string) => {
-        setLanguage(val);
-        localStorage.setItem('language', val);
-        toast.success(t('settings.languageSet').replace('{val}', val));
-        setTimeout(() => window.location.reload(), 1000);
+    const handleLanguageChange = (val: any) => {
+        setLocale(val);
+        toast.success(t('settings.languageSet').replace('{val}', val.toUpperCase()));
     };
 
     const handleManageBilling = async () => {
@@ -155,19 +149,26 @@ export default function SettingsClient({
                 <CardContent className="space-y-4">
                     <div className="space-y-2 max-w-[200px]">
                         <Label className="text-black/60 dark:text-white/60">{t('settings.outputLanguage')}</Label>
-                        <Select value={language} onValueChange={handleLanguageChange}>
+                        <Select value={locale} onValueChange={handleLanguageChange}>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select Language" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="English">English</SelectItem>
-                                <SelectItem value="Turkish">Türkçe</SelectItem>
-                                <SelectItem value="Spanish">Español</SelectItem>
-                                <SelectItem value="French">Français</SelectItem>
-                                <SelectItem value="German">Deutsch</SelectItem>
-                                <SelectItem value="Italian">Italiano</SelectItem>
-                                <SelectItem value="Dutch">Nederlands</SelectItem>
-                                <SelectItem value="Russian">Русский</SelectItem>
+                                <SelectItem value="en">English</SelectItem>
+                                <SelectItem value="tr">Türkçe</SelectItem>
+                                <SelectItem value="es">Español</SelectItem>
+                                <SelectItem value="fr">Français</SelectItem>
+                                <SelectItem value="de">Deutsch</SelectItem>
+                                <SelectItem value="it">Italiano</SelectItem>
+                                <SelectItem value="ru">Русский</SelectItem>
+                                <SelectItem value="zh">中文</SelectItem>
+                                <SelectItem value="ja">日本語</SelectItem>
+                                <SelectItem value="ko">한국어</SelectItem>
+                                <SelectItem value="hi">हिन्दी</SelectItem>
+                                <SelectItem value="pt">Português</SelectItem>
+                                <SelectItem value="id">Bahasa Indonesia</SelectItem>
+                                <SelectItem value="vi">Tiếng Việt</SelectItem>
+                                <SelectItem value="ar">العربية</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

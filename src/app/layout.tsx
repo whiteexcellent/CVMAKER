@@ -6,6 +6,7 @@ import { I18nProvider } from "@/components/I18nProvider";
 import { resolveLocale } from "@/lib/i18n";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
+import { Analytics } from "@vercel/analytics/react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -49,6 +50,7 @@ export default async function RootLayout({
           >
             {children}
             <Toaster richColors position="top-center" />
+            <Analytics />
           </ThemeProvider>
         </I18nProvider>
       </body>

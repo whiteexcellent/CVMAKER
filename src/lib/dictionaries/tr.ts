@@ -247,7 +247,7 @@ export const tr = {
         selectCvRoleCompany: 'Lütfen bir Özgeçmiş seçin, hedef rolü ve şirketi girin.',
         presentationGenerated: 'Mülakat Sunumunuz Oluşturuldu!'
     }
-,
+    ,
     settings: {
         title: 'Hesap ve Tercihler',
         subtitle: 'Aboneliğinizi yönetin, kredilerinizi görün ve OmniCV deneyiminizi yapılandırın.',
@@ -265,7 +265,7 @@ export const tr = {
         manageSubscription: 'Aboneliği Yönet',
         preferences: 'Tercihler',
         preferencesDesc: 'Uygulama ayarlarınızı özelleştirin.',
-        outputLanguage: 'Çıktı Dili',
+        outputLanguage: 'Uygulama Dili',
         dangerZone: 'Tehlikeli Bölge',
         dangerZoneDesc: 'Verilerinizle ilgili geri dönüşü olmayan işlemler.',
         deleteWarning: 'Hesabınızı silmek profilinizi, oluşturulan CV\'leri, Ön Yazıları ve Sunumları kalıcı olarak silecektir. Bu işlem geri alınamaz.',

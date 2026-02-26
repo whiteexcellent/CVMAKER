@@ -247,7 +247,7 @@ export const en = {
         selectCvRoleCompany: 'Please select a CV, enter a target role, and target company.',
         presentationGenerated: 'Presentation Generated!'
     }
-,
+    ,
     settings: {
         title: 'Account & Preferences',
         subtitle: 'Manage your subscription, view your credits, and configure your OmniCV experience.',
@@ -265,7 +265,7 @@ export const en = {
         manageSubscription: 'Manage Subscription',
         preferences: 'Preferences',
         preferencesDesc: 'Customize your application settings.',
-        outputLanguage: 'Output Language',
+        outputLanguage: 'Application Language',
         dangerZone: 'Danger Zone',
         dangerZoneDesc: 'Irreversible actions regarding your data.',
         deleteWarning: 'Deleting your account will permanently erase your profile, generated CVs, Cover Letters, and Presentations. This action cannot be undone.',
