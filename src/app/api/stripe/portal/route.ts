@@ -24,8 +24,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'No Stripe customer found for this email', redirect: true }, { status: 404 });
         }
 
+        const { origin } = new URL(req.url);
         const customerId = customers.data[0].id;
-        const returnUrl = `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/settings`;
+        const returnUrl = `${origin}/settings`;
 
         // Create Stripe Customer Portal session
         const portalSession = await stripe.billingPortal.sessions.create({

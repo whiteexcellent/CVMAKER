@@ -54,9 +54,8 @@ export async function POST(req: Request) {
         }
 
         // Return the domain link
-        const host = req.headers.get('host') || 'localhost:3000';
-        const protocol = host.includes('localhost') ? 'http' : 'https';
-        const shareUrl = `${protocol}://${host}/share/${shareId}`;
+        const { origin } = new URL(req.url);
+        const shareUrl = `${origin}/share/${shareId}`;
 
         return NextResponse.json({
             success: true,

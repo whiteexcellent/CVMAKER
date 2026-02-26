@@ -27,6 +27,8 @@ export async function POST(req: Request) {
         const priceId = process.env.STRIPE_PRICE_ID_PRO_YEARLY;
         const mode = 'subscription';
 
+        const { origin } = new URL(req.url);
+
         // Create a Stripe Checkout session
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'],
@@ -39,8 +41,8 @@ export async function POST(req: Request) {
                 },
             ],
             mode: mode as any,
-            success_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?success=true`,
-            cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/dashboard?canceled=true`,
+            success_url: `${origin}/dashboard?success=true`,
+            cancel_url: `${origin}/dashboard?canceled=true`,
             client_reference_id: user.id, // Extremely important: Links the Stripe purchase back to the Supabase User ID in the webhook
             metadata: {
                 packageId: packageId
