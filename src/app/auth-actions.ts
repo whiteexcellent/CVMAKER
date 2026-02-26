@@ -6,26 +6,27 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 
 async function getSiteUrl() {
-    // Priority 1: Environment variable (if explicitly set)
+    // 1. Dynamic detection from headers (most reliable for custom domains)
+    const headerList = await headers()
+    const host = headerList.get('host')
+    const protocol = headerList.get('x-forwarded-proto') || (process.env.NODE_ENV === 'development' ? 'http' : 'https')
+
+    // Only skip host detection if explicitly on localhost/127.0.0.1 in development
+    if (host && !host.includes('localhost') && !host.includes('127.0.0.1')) {
+        return `${protocol}://${host}`
+    }
+
+    // 2. Environment variable (if explicitly set)
     if (process.env.NEXT_PUBLIC_SITE_URL) {
         return process.env.NEXT_PUBLIC_SITE_URL.replace(/\/$/, '')
     }
 
-    // Priority 2: Vercel deployment URL
+    // 3. Vercel deployment URL
     if (process.env.NEXT_PUBLIC_VERCEL_URL) {
         return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
     }
 
-    // Priority 3: Dynamic detection from headers (most reliable for custom domains)
-    const headerList = await headers()
-    const host = headerList.get('host')
-    const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https'
-
-    if (host) {
-        return `${protocol}://${host}`
-    }
-
-    // Ultimate fallback
+    // Ultimate fallback for local development
     return 'http://localhost:3000'
 }
 
