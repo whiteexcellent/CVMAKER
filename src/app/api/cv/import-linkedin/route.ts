@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
+
 import { createClient } from '@/lib/supabase/server';
-import { ApifyClient } from 'apify-client';
+import { checkAndDeductCredit } from '@/lib/credits';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
+
+const schema = z.object({
+    linkedinUrl: z.string().url()
+});
 
 export async function POST(req: Request) {
     try {
@@ -14,21 +21,28 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { linkedinUrl } = body;
+        const parsed = schema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid payload: Must be a valid LinkedIn URL' }, { status: 400 });
+        }
+        const { linkedinUrl } = parsed.data;
 
-        if (!linkedinUrl || !linkedinUrl.includes('linkedin.com/in/')) {
+        if (!linkedinUrl.includes('linkedin.com/in/')) {
             return NextResponse.json({ error: 'Please provide a valid LinkedIn profile URL (e.g., https://www.linkedin.com/in/username/)' }, { status: 400 });
         }
 
-        // 1. Check if user has at least 1 credit
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('total_credits')
-            .eq('id', user.id)
-            .single();
+        const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+        const isPro = profile?.subscription_tier === 'pro';
+        const isDev = process.env.NODE_ENV === 'development';
 
-        if (profileError || !profileData || profileData.total_credits < 1) {
-            return NextResponse.json({ error: 'Insufficient credits. Please purchase more credits to use this feature.' }, { status: 403 });
+        if (!isPro && !isDev) {
+            return NextResponse.json({ error: 'LinkedIn Import is a Pro feature. Please upgrade to Pro Yearly to unlock this tool.' }, { status: 403 });
+        }
+
+        // 1. Check User Credits Securely
+        const creditCheck = await checkAndDeductCredit(user.id, 1);
+        if (!creditCheck.allowed) {
+            return NextResponse.json({ error: creditCheck.reason }, { status: 402 });
         }
 
         // 2. Initialize Apify Client
@@ -37,76 +51,89 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'LinkedIn import service is currently unavailable.' }, { status: 503 });
         }
 
-        const client = new ApifyClient({
-            token: process.env.APIFY_API_TOKEN,
+        // 3. Call Apify Actor (dev_fusion/linkedin-profile-scraper)
+
+
+        // Using native fetch to bypass Turbopack dynamic module resolution error
+        const apifyUrl = `https://api.apify.com/v2/acts/dev_fusion~linkedin-profile-scraper/run-sync-get-dataset-items`;
+
+        const runRes = await fetch(apifyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
+            },
+            body: JSON.stringify({
+                "profileUrls": [linkedinUrl]
+            })
         });
 
-        // 3. Call Apify Actor (rocketrpm/linkedin-profile-scraper)
-        console.log(`Starting Apify scrape for: ${linkedinUrl}`);
+        if (!runRes.ok) {
+            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
+            const errorText = await runRes.text();
+            console.error("Apify API Error:", errorText);
+            throw new Error(`Apify returned ${runRes.status}`);
+        }
 
-        // This is the fastest, no-cookie scraper. 
-        const run = await client.actor("rocketrpm/linkedin-profile-scraper").call({
-            "urls": [linkedinUrl],
-            "minDelay": 1,
-            "maxDelay": 3
-        });
+        const items = await runRes.json();
 
         // 4. Fetch the results
-        const { items } = await client.dataset(run.defaultDatasetId).listItems();
-
         if (!items || items.length === 0) {
+            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
             console.error('Apify returned no data for:', linkedinUrl);
             return NextResponse.json({ error: 'Could not extract data from this LinkedIn profile. Please ensure it is a public profile.' }, { status: 404 });
         }
 
         const profileDataRaw = items[0] as any;
 
-        // 5. Format the data for our Wizard
+        // 5. Format the data for our Wizard (Defensive extraction for dev_fusion)
         // Extracting experiences
         let experienceFormatted = '';
-        if (profileDataRaw.experience && Array.isArray(profileDataRaw.experience)) {
-            experienceFormatted = profileDataRaw.experience.map((exp: any) => {
-                return `${exp.title || 'Role'} at ${exp.company || 'Company'} (${exp.dateRange || 'Dates'}).\n${exp.description || ''}`;
+        const rawExperience = profileDataRaw.experience || profileDataRaw.experiences || [];
+        if (Array.isArray(rawExperience)) {
+            experienceFormatted = rawExperience.map((exp: any) => {
+                const title = exp.title || exp.position || exp.role || 'Role';
+                const company = exp.company || exp.companyName || 'Company';
+                const duration = exp.dateRange || exp.duration || exp.period || 'Dates';
+                const desc = exp.description || exp.summary || '';
+                return `${title} at ${company} (${duration}).\n${desc}`;
             }).join('\n\n');
         }
 
         // Extracting education
         let educationFormatted = '';
-        if (profileDataRaw.education && Array.isArray(profileDataRaw.education)) {
-            educationFormatted = profileDataRaw.education.map((edu: any) => {
-                return `${edu.degree || 'Degree'} at ${edu.school || 'School'} (${edu.dateRange || 'Dates'})`;
+        const rawEdu = profileDataRaw.education || profileDataRaw.educations || [];
+        if (Array.isArray(rawEdu)) {
+            educationFormatted = rawEdu.map((edu: any) => {
+                const degree = edu.degree || edu.degreeName || 'Degree';
+                const school = edu.school || edu.schoolName || edu.institution || 'School';
+                const duration = edu.dateRange || edu.duration || edu.period || 'Dates';
+                return `${degree} at ${school} (${duration})`;
             }).join('\n\n');
         }
 
         // Extracting skills
         let skillsFormatted = profileDataRaw.skills || '';
         if (Array.isArray(profileDataRaw.skills)) {
-            skillsFormatted = profileDataRaw.skills.join(', ');
+            skillsFormatted = profileDataRaw.skills.map((s: any) => typeof s === 'string' ? s : s.name || s.title || JSON.stringify(s)).join(', ');
+        } else if (typeof profileDataRaw.skills === 'string') {
+            skillsFormatted = profileDataRaw.skills;
         }
 
         // Extracting summary
-        const summaryFormatted = profileDataRaw.about || profileDataRaw.summary || '';
+        const summaryFormatted = profileDataRaw.about || profileDataRaw.summary || profileDataRaw.description || '';
+
+        const fullName = profileDataRaw.fullName || `${profileDataRaw.firstName || ''} ${profileDataRaw.lastName || ''}`.trim();
+        const headline = profileDataRaw.headline || profileDataRaw.position || '';
 
         const formattedResult = {
             experience: experienceFormatted.trim(),
             education: educationFormatted.trim(),
             skills: skillsFormatted,
-            summary: summaryFormatted, // Optional: User might want to use it
-            fullName: `${profileDataRaw.firstName || ''} ${profileDataRaw.lastName || ''}`.trim(),
-            targetRole: profileDataRaw.headline || ''
+            summary: summaryFormatted,
+            fullName: fullName,
+            targetRole: headline
         };
-
-        // 6. Deduct 1 credit from user
-        const newCreditBalance = profileData.total_credits - 1;
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ total_credits: newCreditBalance })
-            .eq('id', user.id);
-
-        if (updateError) {
-            console.error('Error updating user credits:', updateError);
-            return NextResponse.json({ error: 'Failed to deduct credits. Scraping data might be lost.' }, { status: 500 });
-        }
 
         // 7. Save scraped data to database
         const { error: insertError } = await supabase
@@ -121,17 +148,7 @@ export async function POST(req: Request) {
             console.error('Error saving scraped profile to db (non-fatal):', insertError);
         }
 
-        // 8. Log the transaction
-        await supabase
-            .from('credit_transactions')
-            .insert({
-                user_id: user.id,
-                amount: -1,
-                type: 'usage',
-                stripe_session_id: `linkedin_scrape_${run.id}` // Link it to the Apify run
-            });
-
-        console.log(`Successfully scraped and deducted 1 credit from user ${user.id}`);
+        // 8. (Deduction transaction handled atomically by deduct_credits RPC)
 
         return NextResponse.json(formattedResult);
 

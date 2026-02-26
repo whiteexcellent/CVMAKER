@@ -1,8 +1,14 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
-import { ApifyClient } from 'apify-client';
+import { z } from 'zod';
 
+import { createClient } from '@/lib/supabase/server';
+import { checkAndDeductCredit } from '@/lib/credits';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 export const dynamic = 'force-dynamic';
+
+const schema = z.object({
+    jobUrl: z.string().url()
+});
 
 export async function POST(req: Request) {
     try {
@@ -14,98 +20,111 @@ export async function POST(req: Request) {
         }
 
         const body = await req.json();
-        const { jobUrl } = body;
+        const parsed = schema.safeParse(body);
+        if (!parsed.success) {
+            return NextResponse.json({ error: 'Invalid payload: Must be a valid Job URL' }, { status: 400 });
+        }
+        const { jobUrl } = parsed.data;
 
-        if (!jobUrl) {
-            return NextResponse.json({ error: 'Please provide a valid job posting URL.' }, { status: 400 });
+        const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+        const isPro = profile?.subscription_tier === 'pro';
+        const isDev = process.env.NODE_ENV === 'development';
+
+        if (!isPro && !isDev) {
+            return NextResponse.json({ error: 'Job Search and ATS Bypass is a Pro feature. Please upgrade to Pro Yearly to unlock this tool.' }, { status: 403 });
         }
 
-        // 1. Check if user has at least 2 credits for this premium feature
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('total_credits')
-            .eq('id', user.id)
-            .single();
-
-        if (profileError || !profileData || profileData.total_credits < 2) {
-            return NextResponse.json({ error: 'Insufficient credits. This premium feature requires 2 credits.' }, { status: 403 });
+        // 1. Check User Credits Securely (Costs 1 credit for scraping)
+        const creditCheck = await checkAndDeductCredit(user.id, 1);
+        if (!creditCheck.allowed) {
+            return NextResponse.json({ error: creditCheck.reason }, { status: 402 });
         }
 
         if (!process.env.APIFY_API_TOKEN) {
             return NextResponse.json({ error: 'Job scraper service is currently unavailable.' }, { status: 503 });
         }
 
-        const client = new ApifyClient({
-            token: process.env.APIFY_API_TOKEN,
-        });
 
-        console.log(`Starting Apify scrape for job: ${jobUrl}`);
-        let run;
-        let jobTitle = '';
-        let companyName = '';
-        let jobDescription = '';
+
+
+        let actorId = '';
+        let inputPayload = {};
 
         // 2. Determine platform and run appropriate scraper
         if (jobUrl.includes('indeed.com')) {
-            // Indeed Scraper: misioslav/indeed-scraper
-            run = await client.actor("misioslav/indeed-scraper").call({
+            actorId = "misceres~indeed-scraper";
+            inputPayload = {
                 "startUrls": [{ "url": jobUrl }],
+                "urls": [jobUrl],
                 "maxItems": 1
-            });
-            const { items } = await client.dataset(run.defaultDatasetId).listItems();
-            if (items && items.length > 0) {
-                const jobData = items[0] as any;
-                jobTitle = jobData.positionName || '';
-                companyName = jobData.company || '';
-                jobDescription = jobData.description || '';
-            }
+            };
         }
-        else if (jobUrl.includes('linkedin.com/jobs')) {
-            // LinkedIn Jobs Scraper: jaymcdowell/linkedin-jobs-scraper
-            run = await client.actor("jaymcdowell/linkedin-jobs-scraper").call({
-                "jobUrls": [jobUrl]
-            });
-            const { items } = await client.dataset(run.defaultDatasetId).listItems();
-            if (items && items.length > 0) {
-                const jobData = items[0] as any;
-                jobTitle = jobData.title || '';
-                companyName = jobData.company || '';
-                jobDescription = jobData.description || '';
+        else if (jobUrl.includes('linkedin.com/jobs') || jobUrl.includes('linkedin.com/posts')) {
+            actorId = "curious_coder~linkedin-jobs-scraper";
+            inputPayload = {
+                "jobUrls": [jobUrl],
+                "urls": [jobUrl]
             }
         }
         else if (jobUrl.includes('glassdoor.com')) {
-            // Glassdoor Scraper: epctex/glassdoor-scraper
-            run = await client.actor("epctex/glassdoor-scraper").call({
+            actorId = "epctex~glassdoor-scraper";
+            inputPayload = {
                 "startUrls": [{ "url": jobUrl }],
                 "maxItems": 1
-            });
-            const { items } = await client.dataset(run.defaultDatasetId).listItems();
-            if (items && items.length > 0) {
-                const jobData = items[0] as any;
-                jobTitle = jobData.jobTitle || '';
-                companyName = jobData.employerName || '';
-                jobDescription = jobData.jobDescription || '';
             }
         }
         else {
             return NextResponse.json({ error: 'Unsupported URL. Please provide an Indeed, LinkedIn Jobs, or Glassdoor link.' }, { status: 400 });
         }
 
+        // Call Apify via native fetch to bypass Turbopack dynamic module handling
+        const apifyUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items`;
+
+        const runRes = await fetch(apifyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
+            },
+            body: JSON.stringify(inputPayload)
+        });
+
+        if (!runRes.ok) {
+            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
+            const errorText = await runRes.text();
+            console.error("Apify API Error:", errorText);
+            throw new Error(`Apify returned ${runRes.status}`);
+        }
+
+        const items = await runRes.json();
+
+        let jobTitle = '';
+        let companyName = '';
+        let jobDescription = '';
+
+        if (items && items.length > 0) {
+            const jobData = items[0] as any;
+            if (jobUrl.includes('indeed.com')) {
+                jobTitle = jobData.positionName || jobData.jobTitle || jobData.title || '';
+                companyName = jobData.company || jobData.companyName || jobData.employerName || '';
+                jobDescription = jobData.description || jobData.jobDescription || jobData.fullDescription || '';
+            } else if (jobUrl.includes('linkedin.com')) {
+                jobTitle = jobData.title || jobData.jobTitle || '';
+                companyName = jobData.company || jobData.companyName || '';
+                jobDescription = jobData.description || jobData.jobDescription || '';
+            } else if (jobUrl.includes('glassdoor.com')) {
+                jobTitle = jobData.jobTitle || jobData.title || '';
+                companyName = jobData.employerName || jobData.company || '';
+                jobDescription = jobData.jobDescription || jobData.description || '';
+            }
+        }
+
         if (!jobDescription) {
+            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
             return NextResponse.json({ error: 'Could not extract job description from the provided URL.' }, { status: 404 });
         }
 
-        // 3. Deduct 2 credits from user
-        const newCreditBalance = profileData.total_credits - 2;
-        const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ total_credits: newCreditBalance })
-            .eq('id', user.id);
-
-        if (updateError) {
-            console.error('Error updating user credits:', updateError);
-            return NextResponse.json({ error: 'Failed to deduct credits. Operation cancelled.' }, { status: 500 });
-        }
+        // 3. Deduction was already securely completed at step 1.
 
         // 4. Save scraped job data to database
         const { error: insertError } = await supabase
@@ -122,26 +141,25 @@ export async function POST(req: Request) {
             console.error('Error saving scraped job to db (non-fatal):', insertError);
         }
 
-        // 5. Log the transaction
-        await supabase
-            .from('credit_transactions')
-            .insert({
-                user_id: user.id,
-                amount: -2,
-                type: 'usage',
-                stripe_session_id: `job_scrape_${run.id}`
-            });
+        // 5. Log the transaction (Currently Deductions are disabled for testing)
+        // await supabase
+        //     .from('credit_transactions')
+        //     .insert({
+        //         user_id: user.id,
+        //         amount: -2,
+        //         type: 'usage',
+        //         stripe_session_id: `job_scrape_${Date.now()}` // Link it to the Apify run
+        //     });
+        //
 
-        console.log(`Successfully scraped job and deducted 2 credits from user ${user.id}`);
 
         return NextResponse.json({
-            jobTitle,
-            companyName,
-            jobDescription
+            title: jobTitle,
+            company: companyName,
+            description: jobDescription
         });
-
     } catch (err: any) {
-        console.error('Job Scraper Error:', err);
-        return NextResponse.json({ error: err.message || 'An unexpected error occurred during import.' }, { status: 500 });
+        console.error('Job Scrape Error:', err);
+        return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
     }
 }

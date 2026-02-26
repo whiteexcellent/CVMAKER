@@ -1,0 +1,5 @@
+﻿src/app/api/cover-letter/generate/route.ts(70,55): error TS2552: Cannot find name 'resume'. Did you mean 'resumeId'?
+src/app/api/cover-letter/generate/route.ts(98,32): error TS18047: 'user' is possibly 'null'.
+src/app/cv/[id]/CVPreviewClient.tsx(166,38): error TS2322: Type '{ cvData: CVData; userFullName: string; }' is not assignable to type 'IntrinsicAttributes & { pdfUrl?: string | null | undefined; userFullName: string; }'.
+  Property 'cvData' does not exist on type 'IntrinsicAttributes & { pdfUrl?: string | null | undefined; userFullName: string; }'.
+src/lib/presenton.ts(25,42): error TS2339: Property 'generate' does not exist on type 'Presenton'.

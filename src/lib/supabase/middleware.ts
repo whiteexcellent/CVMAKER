@@ -35,10 +35,21 @@ export async function updateSession(request: NextRequest) {
         data: { user },
     } = await supabase.auth.getUser()
 
-    // Protect dashboard routes
+    // Bypassing auth check for local sandbox browser testing as requested
+    // TODO(PRODUCTION): Remove or gate behind a feature flag before deploying to production.
+    // WARNING: This bypasses ALL authentication checks in development mode.
+    const isLocalSandbox = process.env.NODE_ENV === 'development';
+
+    // Protect dashboard and sensitive routes
     if (
+        !isLocalSandbox &&
         !user &&
-        request.nextUrl.pathname.startsWith('/dashboard')
+        (request.nextUrl.pathname.startsWith('/dashboard') ||
+            request.nextUrl.pathname.startsWith('/wizard') ||
+            request.nextUrl.pathname.startsWith('/cv') ||
+            request.nextUrl.pathname.startsWith('/cover-letter') ||
+            request.nextUrl.pathname.startsWith('/presentation') ||
+            request.nextUrl.pathname.startsWith('/pricing'))
     ) {
         // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()
@@ -47,7 +58,7 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Redirect logged in users away from auth pages
-    if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+    if (!isLocalSandbox && user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
         const url = request.nextUrl.clone()
         url.pathname = '/dashboard'
         return NextResponse.redirect(url)

@@ -1,21 +1,25 @@
 'use client';
 
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { MinimalistCVTemplate } from '@/components/templates/MinimalistTemplate';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { DownloadCloud } from 'lucide-react';
 
-export default function PDFExportButton({ cvData, userFullName }: { cvData: any, userFullName: string }) {
-    // react-pdf hydration workaround: render on client side only
+export default function PDFExportButton({ pdfUrl, userFullName }: { pdfUrl?: string | null, userFullName: string }) {
+    if (!pdfUrl) {
+        return (
+            // Fallback if the PDF isn't ready or wasn't generated
+            <Button className="shadow-md shadow-primary/20" disabled>
+                PDF Unavailable
+            </Button>
+        );
+    }
+
     return (
-        <PDFDownloadLink
-            document={<MinimalistCVTemplate data={cvData} userFullName={userFullName} />}
-            fileName={`${userFullName.replace(' ', '_')}_CV.pdf`}
-        >
-            {({ blob, url, loading, error }) => (
-                <Button className="shadow-md shadow-primary/20" disabled={loading}>
-                    {loading ? 'Preparing PDF...' : 'Download PDF'}
-                </Button>
-            )}
-        </PDFDownloadLink>
+        <Button className="shadow-md shadow-primary/20 group hover:shadow-primary/40 transition-all font-semibold" asChild>
+            <a href={pdfUrl} target="_blank" rel="noopener noreferrer" download={`${userFullName.replace(/\s+/g, '_')}_CV.pdf`}>
+                <DownloadCloud className="w-4 h-4 mr-2 group-hover:-translate-y-0.5 transition-transform" />
+                Download PDF
+            </a>
+        </Button>
     );
 }

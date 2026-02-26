@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import Link from 'next/link'
+import DashboardClient from './DashboardClient'
+import { ThemeToggle } from '@/components/ThemeToggle'
+import { LanguageToggle } from '@/components/LanguageToggle'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -20,19 +22,62 @@ export default async function DashboardPage() {
         .eq('id', data.user.id)
         .single()
 
+    // Calculate Display Credits (Considering UTC Daily Resets)
+    let displayCredits = profile?.total_credits || 0
+    if (profile) {
+        const now = new Date()
+        const lastReset = profile.last_credit_reset ? new Date(profile.last_credit_reset) : new Date(0)
+
+        const isNewDay =
+            now.getUTCFullYear() > lastReset.getUTCFullYear() ||
+            now.getUTCMonth() > lastReset.getUTCMonth() ||
+            now.getUTCDate() > lastReset.getUTCDate()
+
+        const currentDaily = isNewDay ? 1 : (profile.daily_credits || 0)
+        displayCredits += currentDaily
+    }
+
+    // Fetch the user's generated CVs
+    const { data: resumes } = await supabase
+        .from('resumes')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .order('created_at', { ascending: false })
+
+    // Fetch the user's generated Cover Letters
+    const { data: coverLetters } = await supabase
+        .from('cover_letters')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .order('created_at', { ascending: false })
+
+    // Fetch the user's generated Presentations
+    const { data: presentations } = await supabase
+        .from('presentations')
+        .select('*')
+        .eq('user_id', data.user.id)
+        .order('created_at', { ascending: false })
+
     return (
-        <div className="flex min-h-screen flex-col">
-            <header className="flex h-16 items-center border-b px-6 bg-background">
+        <div className="flex min-h-screen flex-col bg-white dark:bg-black text-black dark:text-white">
+            <header className="flex h-16 items-center border-b border-black/10 dark:border-white/10 px-6">
                 <div className="flex flex-1 items-center justify-between">
                     <Link href="/" className="font-bold text-lg tracking-tight">
-                        CV Maker Omni
+                        OMNICV
                     </Link>
                     <div className="flex items-center gap-4">
-                        <div className="text-sm font-medium text-muted-foreground mr-4">
-                            Credits: <span className="text-foreground">{profile?.total_credits || 0}</span>
+                        <LanguageToggle />
+                        <ThemeToggle />
+                        <div className="text-sm font-medium text-black/50 dark:text-white/50 mr-4">
+                            Credits: <span className="text-black dark:text-white font-bold">{displayCredits === 0 && profile?.subscription_tier === 'pro' ? 'Unlimited' : displayCredits}</span>
                         </div>
+                        <Link href="/settings">
+                            <Button variant="ghost" size="sm" className="font-semibold hidden sm:inline-flex">
+                                Settings
+                            </Button>
+                        </Link>
                         <form action="/auth/signout" method="post">
-                            <Button variant="outline" size="sm" type="submit">
+                            <Button variant="outline" size="sm" type="submit" className="border-black/20 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
                                 Log out
                             </Button>
                         </form>
@@ -41,33 +86,12 @@ export default async function DashboardPage() {
             </header>
 
             <main className="flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full">
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                    <Card className="col-span-full md:col-span-2 lg:col-span-2 border-primary/20 bg-primary/5">
-                        <CardHeader>
-                            <CardTitle className="text-3xl">Welcome Back!</CardTitle>
-                            <CardDescription className="text-lg mt-2">
-                                Ready to create an attention-grabbing, mathematically optimized resume?
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <Button size="lg" className="w-full md:w-auto font-medium" asChild>
-                                <Link href="/wizard">Create New CV &rarr;</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Recent Documents</CardTitle>
-                            <CardDescription>Your recently generated CVs</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-sm text-muted-foreground text-center py-8">
-                                No resumes generated yet.
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
+                <DashboardClient
+                    totalCredits={displayCredits}
+                    resumes={resumes || []}
+                    coverLetters={coverLetters || []}
+                    presentations={presentations || []}
+                />
             </main>
         </div>
     )

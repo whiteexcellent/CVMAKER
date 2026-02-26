@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
 
-// Initialize a Supabase ADMIN client because webhooks run outside of an authenticated user session.
-// We MUST use the SERVICE_ROLE_KEY to bypass Row Level Security.
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
-    process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy_key'
-);
-
 export async function POST(req: Request) {
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+        console.error('Missing STRIPE_WEBHOOK_SECRET');
+        return NextResponse.json({ error: 'STRIPE_WEBHOOK_SECRET missing' }, { status: 500 });
+    }
+
     let event;
 
     try {
@@ -41,44 +39,39 @@ export async function POST(req: Request) {
                 break;
             }
 
-            // Determine credits to add
-            let creditsToAdd = 0;
-            if (packageId === '10_credits') creditsToAdd = 10;
-            if (packageId === '25_credits') creditsToAdd = 25;
-
-            if (creditsToAdd > 0) {
-                // 1. Fetch current profile
-                const { data: profile, error: profileErr } = await supabaseAdmin
-                    .from('profiles')
-                    .select('total_credits')
-                    .eq('id', userId)
+            if (packageId === 'pro_yearly') {
+                const { data: existingTx } = await supabaseAdmin
+                    .from('credit_transactions')
+                    .select('id')
+                    .eq('stripe_session_id', session.id)
                     .single();
 
-                if (profileErr || !profile) {
-                    console.error("User profile not found for webhook fulfillment", userId);
+                if (existingTx) {
+                    console.log(`Order for session ${session.id} was already fulfilled. Ignoring.`);
                     break;
                 }
 
-                // 2. Fulfill Order: Add credits
+                // Upgrade to Pro
                 const { error: updateErr } = await supabaseAdmin
                     .from('profiles')
-                    .update({ total_credits: profile.total_credits + creditsToAdd })
+                    .update({ subscription_tier: 'pro' })
                     .eq('id', userId);
 
                 if (updateErr) {
-                    console.error("Failed to add credits to user", updateErr);
+                    console.error("Failed to upgrade user to Pro", updateErr);
                     break;
                 }
 
-                // 3. Record Transaction Ledger
                 await supabaseAdmin.from('credit_transactions').insert({
                     user_id: userId,
-                    amount: creditsToAdd,
-                    type: 'purchase',
+                    amount: 0,
+                    type: 'subscription',
                     stripe_session_id: session.id
                 });
 
-                console.log(`Successfully fulfilled order for user ${userId}. Added ${creditsToAdd} credits.`);
+                console.log(`Successfully fulfilled order for user ${userId}. Upgraded to Pro Yearly.`);
+            } else {
+                console.warn(`Unhandled packageId: ${packageId} for user ${userId}`);
             }
             break;
 

@@ -4,42 +4,46 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 
-export async function login(formData: FormData) {
+export async function signInWithMagicLink(formData: FormData) {
     const supabase = await createClient()
 
-    // type-casting here for convenience
-    // in practice, you should use zod to validate the form data
-    const data = {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-    }
+    const email = formData.get('email') as string
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-    const { error } = await supabase.auth.signInWithPassword(data)
+    const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            emailRedirectTo: `${siteUrl}/auth/callback`,
+            shouldCreateUser: false, // SECURITY: Prevent ghost accounts on typo
+        },
+    })
 
     if (error) {
-        redirect('/error')
+        console.error('Magic link sign-in error:', error.message)
+        redirect('/error?error=user_not_found')
     }
 
-    revalidatePath('/', 'layout')
-    redirect('/dashboard')
+    redirect('/verify-email')
 }
 
-export async function signup(formData: FormData) {
+export async function signUpWithMagicLink(formData: FormData) {
     const supabase = await createClient()
 
-    // type-casting here for convenience
-    // in practice, you should use zod to validate the form data
-    const data = {
-        email: formData.get('email') as string,
-        password: formData.get('password') as string,
-    }
+    const email = formData.get('email') as string
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
 
-    const { error } = await supabase.auth.signUp(data)
+    const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+            emailRedirectTo: `${siteUrl}/auth/callback`,
+            // DEFAULT: shouldCreateUser is true, which is correct for signup
+        },
+    })
 
     if (error) {
-        redirect('/error')
+        console.error('Magic link sign-up error:', error.message)
+        redirect('/error?message=' + encodeURIComponent(error.message))
     }
 
-    revalidatePath('/', 'layout')
-    redirect('/dashboard')
+    redirect('/verify-email')
 }
