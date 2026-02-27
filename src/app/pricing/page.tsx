@@ -4,13 +4,31 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/components/I18nProvider'
 import { LanguageToggle } from '@/components/LanguageToggle'
 
 export default function PricingPage() {
     const { t } = useTranslation();
+    const router = useRouter();
     const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+    const [isPro, setIsPro] = useState(false);
+
+    useEffect(() => {
+        const checkPro = async () => {
+            const supabase = createClient();
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const { data } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
+                if (data?.subscription_tier === 'pro') {
+                    setIsPro(true);
+                }
+            }
+        };
+        checkPro();
+    }, []);
 
     const pricingPlans = [
         {
@@ -39,6 +57,12 @@ export default function PricingPage() {
             window.location.href = '/login';
             return;
         }
+
+        if (isPro && packageId === 'pro_yearly') {
+            router.push('/dashboard');
+            return;
+        }
+
         setLoadingPlan(packageId);
         try {
             const res = await fetch('/api/stripe/checkout', {
@@ -122,13 +146,13 @@ export default function PricingPage() {
 
                             <Button
                                 onClick={() => handleCheckout(plan.packageId)}
-                                disabled={loadingPlan === plan.packageId}
+                                disabled={loadingPlan === plan.packageId || (isPro && plan.packageId === 'pro_yearly')}
                                 className={`w-full h-12 font-bold px-8 rounded-none transition-all ${plan.buttonVariant === 'default'
                                     ? 'bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black border-0'
                                     : 'bg-transparent border-2 border-black dark:border-white text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10'
                                     }`}
                             >
-                                {loadingPlan === plan.packageId ? (
+                                {isPro && plan.packageId === 'pro_yearly' ? t('common.active') || 'Current Plan' : loadingPlan === plan.packageId ? (
                                     <span className="flex items-center gap-2">
                                         <Loader2 className="w-4 h-4 animate-spin" />
                                         {t('pricing.loading')}

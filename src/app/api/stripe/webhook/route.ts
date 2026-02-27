@@ -54,7 +54,7 @@ export async function POST(req: Request) {
                 // Upgrade to Pro
                 const { error: updateErr } = await supabaseAdmin
                     .from('profiles')
-                    .update({ subscription_tier: 'pro' })
+                    .update({ subscription_tier: 'pro', total_credits: 9999 })
                     .eq('id', userId);
 
                 if (updateErr) {

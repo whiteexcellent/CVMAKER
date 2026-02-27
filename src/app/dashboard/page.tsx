@@ -35,6 +35,11 @@ export default async function DashboardPage() {
 
         const currentDaily = isNewDay ? 1 : (profile.daily_credits || 0)
         displayCredits += currentDaily
+
+        // Cap free users to maximum 2 credits
+        if (profile.subscription_tier !== 'pro') {
+            displayCredits = Math.min(displayCredits, 2)
+        }
     }
 
     // Fetch the user's generated CVs
@@ -69,7 +74,7 @@ export default async function DashboardPage() {
                         <LanguageToggle />
                         <ThemeToggle />
                         <div className="text-sm font-medium text-black/50 dark:text-white/50 mr-4">
-                            Credits: <span className="text-black dark:text-white font-bold">{displayCredits === 0 && profile?.subscription_tier === 'pro' ? 'Unlimited' : displayCredits}</span>
+                            Credits: <span className="text-black dark:text-white font-bold text-lg leading-none">{profile?.subscription_tier === 'pro' ? '∞' : displayCredits}</span>
                         </div>
                         <Link href="/settings">
                             <Button variant="ghost" size="sm" className="font-semibold hidden sm:inline-flex">
@@ -91,6 +96,7 @@ export default async function DashboardPage() {
                     resumes={resumes || []}
                     coverLetters={coverLetters || []}
                     presentations={presentations || []}
+                    isPro={profile?.subscription_tier === 'pro'}
                 />
             </main>
         </div>

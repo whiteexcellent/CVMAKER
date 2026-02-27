@@ -41,8 +41,8 @@ export async function POST(req: Request) {
                 },
             ],
             mode: mode as any,
-            success_url: `${origin}/dashboard?success=true`,
-            cancel_url: `${origin}/dashboard?canceled=true`,
+            success_url: `${origin}/success`,
+            cancel_url: `${origin}/pricing?canceled=true`,
             client_reference_id: user.id, // Extremely important: Links the Stripe purchase back to the Supabase User ID in the webhook
             metadata: {
                 packageId: packageId

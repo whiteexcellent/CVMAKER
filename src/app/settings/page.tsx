@@ -35,6 +35,9 @@ export default async function SettingsPage() {
     if (creditsData && Array.isArray(creditsData) && creditsData.length > 0) {
         isUnlimited = creditsData[0].is_unlimited;
         remainingCredits = creditsData[0].remaining_credits;
+        if (!isUnlimited) {
+            remainingCredits = Math.min(remainingCredits, 2);
+        }
     } else if (profile) {
         // Fallback to local calculation if RPC fails
         const now = new Date()
@@ -47,6 +50,9 @@ export default async function SettingsPage() {
         const currentDaily = isNewDay ? 1 : (profile.daily_credits || 0)
         remainingCredits = profile.total_credits + currentDaily
         isUnlimited = profile.subscription_tier === 'pro'
+        if (!isUnlimited) {
+            remainingCredits = Math.min(remainingCredits, 2)
+        }
     }
 
 
