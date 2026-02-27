@@ -1,0 +1,10 @@
+﻿src/app/api/wizard/chat/route.ts(91,21): error TS2353: Object literal may only specify known properties, and 'parameters' does not exist in type '({ description?: string | undefined; title?: string | undefined; providerOptions?: SharedV3ProviderOptions | undefined; inputSchema: FlexibleSchema<any>; ... 5 more ...; onInputAvailable?: ((options: { ...; } & ToolExecutionOptions) => void | PromiseLike<...>) | undefined; } & Partial<...> & { ...; } & { ...; } & Pi...'.
+src/components/wizard/AIChatSidebar.tsx(37,23): error TS2339: Property 'input' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/wizard/AIChatSidebar.tsx(37,30): error TS2339: Property 'handleInputChange' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/wizard/AIChatSidebar.tsx(37,49): error TS2339: Property 'handleSubmit' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/wizard/AIChatSidebar.tsx(37,76): error TS2339: Property 'isLoading' does not exist on type 'UseChatHelpers<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/wizard/AIChatSidebar.tsx(38,9): error TS2353: Object literal may only specify known properties, and 'api' does not exist in type 'UseChatOptions<UIMessage<unknown, UIDataTypes, UITools>>'.
+src/components/wizard/AIChatSidebar.tsx(113,30): error TS2339: Property 'content' does not exist on type 'UIMessage<unknown, UIDataTypes, UITools>'.
+src/components/wizard/AIChatSidebar.tsx(117,46): error TS2339: Property 'content' does not exist on type 'UIMessage<unknown, UIDataTypes, UITools>'.
+src/components/wizard/AIChatSidebar.tsx(123,30): error TS2339: Property 'toolInvocations' does not exist on type 'UIMessage<unknown, UIDataTypes, UITools>'.
+src/components/wizard/AIChatSidebar.tsx(123,52): error TS7006: Parameter 'toolInvocation' implicitly has an 'any' type.
