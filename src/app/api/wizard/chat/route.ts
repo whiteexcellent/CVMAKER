@@ -8,21 +8,11 @@ export const dynamic = 'force-dynamic';
 
 const schema = z.object({
     message: z.string().optional(),
-    messages: z.array(z.object({
-        role: z.enum(['user', 'assistant', 'system']),
-        content: z.string()
-    })).optional(),
+    messages: z.array(z.any()).optional(),
     step: z.number(),
-    formData: z.object({
-        profileType: z.string().optional(),
-        targetRole: z.string().optional(),
-        education: z.string().optional(),
-        experience: z.string().optional(),
-        skills: z.string().optional(),
-        jobDescription: z.string().optional()
-    }).optional(),
+    formData: z.any().optional(),
     locale: z.string().optional()
-}).strict();
+});
 
 export async function POST(req: Request) {
     try {

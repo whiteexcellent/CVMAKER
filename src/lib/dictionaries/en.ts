@@ -275,4 +275,13 @@ export const en = {
         accountDeleted: 'Account permanently deleted. We are sorry to see you go.',
         languageSet: 'Language set to {val}. Refreshing to apply changes...'
     },
+    success: {
+        title: 'Payment Successful',
+        subtitle: 'Welcome to the Pro tier. Your account has been upgraded.',
+        verifying: 'Verifying payment...',
+        paymentVerified: 'Payment Verified',
+        redirecting: 'Redirecting you to the dashboard...',
+        goToDashboard: 'Go to Dashboard',
+        transactionDesc: 'Your transaction has been securely processed.'
+    }
 };

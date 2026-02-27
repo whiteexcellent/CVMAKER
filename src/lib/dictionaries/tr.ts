@@ -275,4 +275,13 @@ export const tr = {
         accountDeleted: 'Hesap kalıcı olarak silindi. Ayrıldığınız için üzgünüz.',
         languageSet: 'Dil {val} olarak ayarlandı. Değişiklikleri uygulamak için yenileniyor...'
     },
+    success: {
+        title: 'Ödeme Başarılı',
+        subtitle: 'Pro katmanına hoş geldiniz. Hesabınız sınırları kaldırmak üzere güncellendi.',
+        verifying: 'Ödeme doğrulanıyor...',
+        paymentVerified: 'Ödeme Doğrulandı',
+        redirecting: 'Kontrol paneline yönlendiriliyorsunuz...',
+        goToDashboard: 'Kontrol Paneline Git',
+        transactionDesc: 'İşleminiz güvenli bir şekilde gerçekleştirildi.'
+    }
 };
