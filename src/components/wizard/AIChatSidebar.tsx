@@ -37,23 +37,20 @@ export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: 
     const [aiLanguage, setAiLanguage] = useState<string>(locale === 'tr' ? 'Turkish' : 'English');
     const [input, setInput] = useState('');
 
-    const { messages, setMessages, status, sendMessage } = useChat({
-        transport: new DefaultChatTransport({
-            api: '/api/wizard/chat',
-            body: { step, formData, locale: aiLanguage }
-        }),
-        messages: [
-            {
-                id: 'welcome',
-                role: 'assistant',
-                content: String(t('wizard.aiWelcome') || 'Hi! I am your AI Assistant. Tell me a bit about yourself and I will help you fill out your CV. What are you studying or what is your current role?')
-            } as any
-        ],
-        onError: (err) => {
-            console.error('Chat error:', err);
-            toast.error(t('wizard.aiError') || 'Sorry, I encountered an error. Please try again.');
+    const { messages, setMessages, status, sendMessage } = useChat();
+
+    // Manually add welcome message on mount if empty
+    useEffect(() => {
+        if (messages.length === 0) {
+            setMessages([
+                {
+                    id: 'welcome',
+                    role: 'assistant',
+                    content: String(t('wizard.aiWelcome') || 'Hi! I am your AI Assistant. Tell me a bit about yourself and I will help you fill out your CV. What are you studying or what is your current role?')
+                } as any
+            ]);
         }
-    });
+    }, [messages.length, setMessages, t]);
 
     const isLoading = status === 'submitted' || status === 'streaming';
 
@@ -68,9 +65,10 @@ export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: 
         const messageText = input;
         setInput('');
 
-        await sendMessage(
-            { text: messageText }
-        );
+        await (sendMessage as any)({ text: messageText }, {
+            headers: { 'Content-Type': 'application/json' },
+            body: { step, formData, locale: aiLanguage }
+        });
     };
 
     const messagesEndRef = useRef<HTMLDivElement>(null);

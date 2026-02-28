@@ -11,19 +11,18 @@ import { Progress } from '@/components/ui/progress';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { useTranslation } from '@/components/I18nProvider';
-import { Linkedin, Loader2, Sparkles, Briefcase, ArrowRight, ArrowLeft, Bot, Command, MessageSquareText } from 'lucide-react';
+import { Linkedin, Loader2, Briefcase, ArrowRight, ArrowLeft, Bot } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
-import { AIChatSidebar } from '@/components/wizard/AIChatSidebar';
 
 export default function WizardPage() {
     const router = useRouter();
     const [step, setStep] = useState(1);
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAuthChecking, setIsAuthChecking] = useState(true);
-    const [isChatOpen, setIsChatOpen] = useState(false);
+
     const { t } = useTranslation();
     const totalSteps = 4;
 
@@ -186,22 +185,13 @@ export default function WizardPage() {
                         <div className="text-sm font-bold text-black dark:text-white">
                             {t('wizard.step')} {step} {t('wizard.of')} {totalSteps}
                         </div>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className={`ml-2 gap-2 font-bold transition-all ${isChatOpen ? 'bg-black text-white dark:bg-white dark:text-black border-transparent' : 'bg-transparent text-black dark:text-white border-black/20 dark:border-white/20'}`}
-                            onClick={() => setIsChatOpen(!isChatOpen)}
-                        >
-                            <MessageSquareText className="w-4 h-4" />
-                            <span className="hidden sm:inline">{t('wizard.aiAssistant') || 'AI Assistant'}</span>
-                        </Button>
                     </div>
                 </header>
 
                 <Progress value={progressPercentage} className="h-1 w-full rounded-none bg-slate-100 dark:bg-white/10 [&>div]:bg-black dark:[&>div]:bg-white" />
 
                 <div className="flex flex-1 relative">
-                    <main className={`flex-1 flex flex-col items-center py-12 px-4 transition-all duration-300 ${isChatOpen ? 'md:pr-96' : ''}`}>
+                    <main className="flex-1 flex flex-col items-center py-12 px-4">
                         <div className="w-full max-w-3xl relative z-10 transition-all duration-300">
                             <Card className="w-full bg-white dark:bg-black border-black/10 dark:border-white/10 shadow-sm rounded-none">
 
@@ -432,13 +422,7 @@ export default function WizardPage() {
                         </div>
                     </main>
 
-                    <AIChatSidebar
-                        isOpen={isChatOpen}
-                        onClose={() => setIsChatOpen(false)}
-                        step={step}
-                        formData={formData}
-                        setFormData={setFormData}
-                    />
+
                 </div>
             </div>
     );
