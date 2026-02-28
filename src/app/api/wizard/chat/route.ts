@@ -75,20 +75,32 @@ Your Task & Persona Rules:
             finalMessagesToSend.push({ role: 'user', content: message });
         }
 
-        const coreMessages = finalMessagesToSend.map((msg: any) => {
-            let textContent = msg.content || '';
-            if (!textContent && Array.isArray(msg.parts)) {
-                textContent = msg.parts
-                    .filter((p: any) => p.type === 'text')
-                    .map((p: any) => p.text)
-                    .join('\n');
-            }
+        // Strictly map to valid CoreMessages
+        const coreMessages = finalMessagesToSend
+            .map((msg: any) => {
+                let textContent = '';
+                if (typeof msg.content === 'string') {
+                    textContent = msg.content;
+                } else if (Array.isArray(msg.parts)) {
+                    textContent = msg.parts
+                        .filter((p: any) => p.type === 'text')
+                        .map((p: any) => p.text)
+                        .join('\n');
+                } else if (Array.isArray(msg.content)) {
+                    textContent = msg.content.filter((c: any) => c.type === 'text').map((c: any) => c.text).join('\n');
+                }
 
-            return {
-                role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user',
-                content: textContent,
-            };
-        });
+                // Treat tool responses or internal states as user context strictly if needed, but here we just pass pure text
+                const role = (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user';
+
+                return {
+                    role,
+                    content: textContent,
+                };
+            })
+            .filter((msg: any) => msg.content.trim() !== ''); // Groq will throw validation error if content is perfectly empty string without tool calls
+
+
 
         const result = streamText({
             model: groq('llama-3.3-70b-versatile'),

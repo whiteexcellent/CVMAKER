@@ -45,9 +45,9 @@ export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: 
             {
                 id: 'welcome',
                 role: 'assistant',
-                parts: [{ type: 'text', text: t('wizard.aiWelcome') || 'Hi! I am your AI Assistant. Tell me a bit about yourself and I will help you fill out your CV. What are you studying or what is your current role?' }]
-            }
-        ] as UIMessage[],
+                content: String(t('wizard.aiWelcome') || 'Hi! I am your AI Assistant. Tell me a bit about yourself and I will help you fill out your CV. What are you studying or what is your current role?')
+            } as any
+        ],
         onError: (err) => {
             console.error('Chat error:', err);
             toast.error(t('wizard.aiError') || 'Sorry, I encountered an error. Please try again.');
