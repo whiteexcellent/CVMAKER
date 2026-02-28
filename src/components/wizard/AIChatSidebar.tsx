@@ -38,8 +38,10 @@ export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: 
     const [input, setInput] = useState('');
 
     const { messages, setMessages, status, sendMessage } = useChat({
-        api: '/api/wizard/chat',
-        body: { step, formData, locale: aiLanguage },
+        transport: new DefaultChatTransport({
+            api: '/api/wizard/chat',
+            body: { step, formData, locale: aiLanguage }
+        }),
         messages: [
             {
                 id: 'welcome',

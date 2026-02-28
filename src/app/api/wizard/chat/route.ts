@@ -116,7 +116,7 @@ Your Task & Persona Rules:
                 })
             }
         });
-        return result.toDataStreamResponse();
+        return result.pipeDataStreamToResponse();
 
     } catch (error: any) {
         console.error('Chat Error:', error);
