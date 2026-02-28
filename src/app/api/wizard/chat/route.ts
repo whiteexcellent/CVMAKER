@@ -100,7 +100,7 @@ Your Task & Persona Rules:
             })
             .filter((msg: any) => msg.content.trim() !== ''); // Groq will throw validation error if content is perfectly empty string without tool calls
 
-
+        console.dir({ coreMessages }, { depth: null });
 
         const result = streamText({
             model: groq('llama-3.3-70b-versatile'),
@@ -116,7 +116,7 @@ Your Task & Persona Rules:
                 })
             }
         });
-        return result.toUIMessageStreamResponse();
+        return result.toTextStreamResponse();
 
     } catch (error: any) {
         console.error('Chat Error:', error);
