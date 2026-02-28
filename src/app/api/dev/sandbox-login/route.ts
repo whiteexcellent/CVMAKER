@@ -3,6 +3,8 @@ import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
+const DEV_TEST_EMAIL = 'dev@cvmaker.test';
+
 export async function GET(request: Request) {
     if (process.env.NODE_ENV !== 'development') {
         return NextResponse.json({ error: 'Sandbox login is only available in development mode' }, { status: 403 });
@@ -22,9 +24,25 @@ export async function GET(request: Request) {
             // Find the first user in the system
             const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1 });
             if (listError || !users.users[0]) {
-                return NextResponse.json({ error: 'No users found in database to login as. Please manually create one first.' }, { status: 400 });
+                // No users found — create a dev test user automatically
+                console.log('[sandbox-login] No users found, creating dev test user...');
+                const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
+                    email: DEV_TEST_EMAIL,
+                    password: 'DevPassword2026!',
+                    email_confirm: true,
+                    user_metadata: { full_name: 'Dev Test User', is_dev: true }
+                });
+                if (createError || !newUser.user) {
+                    return NextResponse.json({
+                        error: 'Failed to create dev test user',
+                        details: createError
+                    }, { status: 500 });
+                }
+                targetEmail = newUser.user.email;
+                console.log('[sandbox-login] Dev test user created:', targetEmail);
+            } else {
+                targetEmail = users.users[0].email;
             }
-            targetEmail = users.users[0].email;
         }
 
         // Generate a magic link which sets the session

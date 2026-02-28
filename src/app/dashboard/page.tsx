@@ -1,10 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
 import DashboardClient from './DashboardClient'
-import { ThemeToggle } from '@/components/ThemeToggle'
-import { LanguageToggle } from '@/components/LanguageToggle'
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader'
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -65,30 +62,10 @@ export default async function DashboardPage() {
 
     return (
         <div className="flex min-h-screen flex-col bg-white dark:bg-black text-black dark:text-white">
-            <header className="flex h-16 items-center border-b border-black/10 dark:border-white/10 px-6">
-                <div className="flex flex-1 items-center justify-between">
-                    <Link href="/" className="font-bold text-lg tracking-tight">
-                        OMNICV
-                    </Link>
-                    <div className="flex items-center gap-4">
-                        <LanguageToggle />
-                        <ThemeToggle />
-                        <div className="text-sm font-medium text-black/50 dark:text-white/50 mr-4">
-                            Credits: <span className="text-black dark:text-white font-bold text-lg leading-none">{profile?.subscription_tier === 'pro' ? '∞' : displayCredits}</span>
-                        </div>
-                        <Link href="/settings">
-                            <Button variant="ghost" size="sm" className="font-semibold hidden sm:inline-flex">
-                                Settings
-                            </Button>
-                        </Link>
-                        <form action="/auth/signout" method="post">
-                            <Button variant="outline" size="sm" type="submit" className="border-black/20 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
-                                Log out
-                            </Button>
-                        </form>
-                    </div>
-                </div>
-            </header>
+            <DashboardHeader
+                displayCredits={displayCredits}
+                isPro={profile?.subscription_tier === 'pro'}
+            />
 
             <main className="flex-1 p-6 lg:p-12 max-w-7xl mx-auto w-full">
                 <DashboardClient

@@ -9,6 +9,12 @@ export const en = {
         findJobs: 'Find Jobs',
         findCompanies: 'Target Companies',
         analytics: 'Analytics & Shared Links',
+        credits: 'Credits:',
+        settings: 'Settings',
+        logout: 'Log out',
+        upgradePro: 'Upgrade to Pro',
+        upgradeDesc: 'Unlock unlimited AI generations, cover letters, and premium job scrapers.',
+        upgradeBtn: 'Upgrade Now',
         startFromScratch: 'Start from Scratch',
         builderDesc: 'Use our AI-powered wizard to build a stunning, ATS-friendly resume from the ground up.',
         aiWizard: 'AI CV Wizard',
@@ -58,7 +64,10 @@ export const en = {
         documentType: 'Document',
         cvType: 'CV',
         coverLetterType: 'Cover Letter',
-        presentationType: 'Presentation'
+        presentationType: 'Presentation',
+        searchingJobs: 'Searching live job opportunities...',
+        searchingCompanies: 'Finding target companies...',
+        searchingNote: 'Initializing Apify Agent. This might take 15-30 seconds.'
     },
     common: {
         views: 'views',
@@ -187,7 +196,9 @@ export const en = {
         checkEmail: 'Check your email',
         checkEmailDesc: 'We\'ve sent a magic link to your email address. Click the link to log in securely.',
         safelyClose: 'You can safely close this window.',
-        returnHome: 'Return to Home'
+        returnHome: 'Return to Home',
+        devMode: 'Dev Mode — Password Login',
+        signInPassword: 'Sign in with Password'
     },
     landing: {
         system: 'OmniCV System',

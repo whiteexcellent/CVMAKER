@@ -99,3 +99,22 @@ export async function signUpWithMagicLink(formData: FormData) {
 
     redirect('/verify-email')
 }
+
+// DEV ONLY: Email+password login for automated browser testing
+export async function signInWithPassword(formData: FormData) {
+    if (process.env.NODE_ENV !== 'development') {
+        redirect('/login')
+    }
+    const supabase = await createClient()
+    const email = formData.get('email') as string
+    const password = formData.get('password') as string
+
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+
+    if (error) {
+        redirect('/login?error=invalid_credentials')
+    }
+
+    revalidatePath('/dashboard')
+    redirect('/dashboard')
+}

@@ -58,7 +58,10 @@ export const fr = {
         documentType: 'Document',
         cvType: 'CV',
         coverLetterType: 'Lettre de motivation',
-        presentationType: 'Présentation'
+        presentationType: 'Présentation',
+        searchingJobs: 'Recherche d\'opportunités d\'emploi en direct...',
+        searchingCompanies: 'Recherche d\'entreprises cibles...',
+        searchingNote: 'Initialisation de l\'agent Apify. Cela peut prendre 15 à 30 secondes.'
     },
     common: {
         views: 'vues',
@@ -230,7 +233,9 @@ export const fr = {
         checkEmail: 'Vérifiez vos e-mails',
         checkEmailDesc: 'Nous vous avons envoyé un lien magique. Cliquez dessus pour vous connecter en toute sécurité.',
         safelyClose: 'Vous pouvez fermer cette fenêtre.',
-        returnHome: 'Retour à l\'Accueil'
+        returnHome: 'Retour à l\'Accueil',
+        devMode: 'Mode Dev — Connexion par mot de passe',
+        signInPassword: 'Se connecter avec un mot de passe'
     },
     settings: {
         title: 'Compte & Préférences',

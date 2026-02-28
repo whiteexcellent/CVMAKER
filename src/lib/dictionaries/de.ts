@@ -9,6 +9,12 @@ export const de = {
         findJobs: 'Jobs Finden',
         findCompanies: 'Zielunternehmen',
         analytics: 'Analysen & Geteilte Links',
+        credits: 'Credits:',
+        settings: 'Einstellungen',
+        logout: 'Abmelden',
+        upgradePro: 'Upgrade auf Pro',
+        upgradeDesc: 'Schalte unbegrenzte KI-Generationen, Anschreiben und Premium-Job-Scraper frei.',
+        upgradeBtn: 'Jetzt upgraden',
         startFromScratch: 'Start From Scratch',
         builderDesc: 'Use our AI-powered wizard to build a stunning, ATS-friendly resume from scratch.',
         aiWizard: 'AI CV Wizard',
@@ -43,6 +49,9 @@ export const de = {
         jobKeywordLabel: 'Job Title or Keyword (e.g. React Developer)',
         jobLocationLabel: 'Location (e.g. Remote, San Francisco)',
         searchJobsBtn: 'Search Jobs',
+        searchingJobs: 'Suche nach Live-Jobangeboten...',
+        searchingCompanies: 'Suche nach Zielunternehmen...',
+        searchingNote: 'Apify-Agent wird initialisiert. Dies kann 15-30 Sekunden dauern.',
         apply: 'Apply',
         targetCompaniesDesc: 'Find similar companies in your industry to send speculative applications.',
         companyKeywordLabel: 'Industry or Topic (e.g. Tech Startups)',
@@ -205,7 +214,9 @@ export const de = {
         checkEmail: 'Check your email',
         checkEmailDesc: 'We\'ve sent a magic link to your email address. Click the link to log in securely.',
         safelyClose: 'You can safely close this window.',
-        returnHome: 'Return to Home'
+        returnHome: 'Return to Home',
+        devMode: 'Dev-Modus — Passwort-Login',
+        signInPassword: 'Mit Passwort anmelden'
     },
     toast: {
         cvDeleted: 'Lebenslauf erfolgreich gelöscht',
@@ -231,8 +242,7 @@ export const de = {
         clGenerated: 'Anschreiben generiert!',
         selectCvRoleCompany: 'Bitte wählen Sie einen Lebenslauf, geben Sie eine Zielrolle und ein Zielunternehmen ein.',
         presentationGenerated: 'Präsentation generiert!'
-    }
-,
+    },
     settings: {
         title: 'Konto & Einstellungen',
         subtitle: 'Verwalten Sie Ihr Abonnement, sehen Sie sich Ihre Credits an und konfigurieren Sie Ihr OmniCV-Erlebnis.',

@@ -2,12 +2,12 @@
 
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { signInWithMagicLink } from '@/app/auth-actions'
+import { signInWithMagicLink, signInWithPassword } from '@/app/auth-actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
-import { Mail } from 'lucide-react'
+import { Mail, Lock } from 'lucide-react'
 import Link from 'next/link'
 import { ThemeToggle } from '@/components/ThemeToggle'
 import { useTranslation } from '@/components/I18nProvider'
@@ -83,6 +83,33 @@ function LoginContent() {
                                     </Button>
                                 </div>
                             </form>
+
+                            {process.env.NODE_ENV === 'development' && (
+                                <div className="mt-6 pt-6 border-t border-black/10 dark:border-white/10">
+                                    <p className="text-xs font-bold uppercase tracking-widest text-black/30 dark:text-white/30 mb-4">⚠ {t('auth.devMode') || 'Dev Mode — Password Login'}</p>
+                                    <form className="grid gap-3">
+                                        <Input
+                                            id="dev-email"
+                                            name="email"
+                                            type="email"
+                                            placeholder="Email"
+                                            required
+                                            className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-10 rounded-none text-sm"
+                                        />
+                                        <Input
+                                            id="dev-password"
+                                            name="password"
+                                            type="password"
+                                            placeholder="Password"
+                                            required
+                                            className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-10 rounded-none text-sm"
+                                        />
+                                        <Button formAction={signInWithPassword} variant="outline" className="w-full h-10 bg-transparent border border-black/30 dark:border-white/30 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 font-bold rounded-none text-sm">
+                                            <Lock className="w-3 h-3 mr-2" /> {t('auth.signInPassword') || 'Sign in with Password'}
+                                        </Button>
+                                    </form>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

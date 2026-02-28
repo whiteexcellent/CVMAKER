@@ -1,13 +1,13 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FileText, Linkedin, Briefcase, Building2, Search, Loader2, Trash2, MonitorPlay, MessageSquareText, Plus } from 'lucide-react'
+import { FileText, Linkedin, Briefcase, Building2, Search, Loader2, Trash2, MonitorPlay, MessageSquareText, Plus, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -37,11 +37,32 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
     const [jobQuery, setJobQuery] = useState('')
     const [jobLoc, setJobLoc] = useState('')
     const [jobs, setJobs] = useState<any[]>([])
+    const [jobProgress, setJobProgress] = useState(0)
+    const jobProgressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
     // States for Company Search
     const [compQuery, setCompQuery] = useState('')
     const [compLoc, setCompLoc] = useState('')
     const [companies, setCompanies] = useState<any[]>([])
+    const [compProgress, setCompProgress] = useState(0)
+    const compProgressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+    const startProgress = (setter: React.Dispatch<React.SetStateAction<number>>, intervalRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>) => {
+        setter(0)
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        intervalRef.current = setInterval(() => {
+            setter(prev => {
+                if (prev >= 90) { if (intervalRef.current) clearInterval(intervalRef.current); return 90 }
+                return Math.min(prev + (90 - prev) * 0.04 + 0.3, 90)
+            })
+        }, 250)
+    }
+
+    const finishProgress = (setter: React.Dispatch<React.SetStateAction<number>>, intervalRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>) => {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        setter(100)
+        setTimeout(() => setter(0), 900)
+    }
 
     // States for LinkedIn
     const [linkedinUrl, setLinkedinUrl] = useState('')
@@ -50,7 +71,9 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
         e.preventDefault()
         if (!jobQuery) return
         setIsJobSearching(true)
+        setJobs([])
         setError('')
+        startProgress(setJobProgress, jobProgressRef)
         try {
             const res = await fetch('/api/cv/search-jobs', {
                 method: 'POST',
@@ -63,6 +86,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
         } catch (err: any) {
             setError(err.message)
         } finally {
+            finishProgress(setJobProgress, jobProgressRef)
             setIsJobSearching(false)
         }
     }
@@ -71,7 +95,9 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
         e.preventDefault()
         if (!compQuery) return
         setIsCompanySearching(true)
+        setCompanies([])
         setError('')
+        startProgress(setCompProgress, compProgressRef)
         try {
             const res = await fetch('/api/cv/search-companies', {
                 method: 'POST',
@@ -84,6 +110,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
         } catch (err: any) {
             setError(err.message)
         } finally {
+            finishProgress(setCompProgress, compProgressRef)
             setIsCompanySearching(false)
         }
     }
@@ -129,14 +156,22 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
     return (
         <div className="space-y-6">
             {!isPro && (
-                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl p-6 text-white flex flex-col md:flex-row items-center justify-between shadow-lg mb-8">
-                    <div>
-                        <h3 className="font-bold text-xl mb-1 flex items-center gap-2">🚀 Upgrade to Pro</h3>
-                        <p className="text-white/90 font-medium">Unlock unlimited credits, advanced AI features, and more for just $99/year.</p>
+                <div className="bg-black dark:bg-white dark:text-black text-white rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-lg mb-8 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
+                    <div className="relative z-10">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 dark:border-black/20 bg-white/10 dark:bg-black/10 text-xs font-bold uppercase tracking-widest mb-4 backdrop-blur-md">
+                            <Sparkles className="w-3.5 h-3.5" /> OMNICV PRO
+                        </div>
+                        <h3 className="font-black text-2xl md:text-3xl tracking-tight mb-2">
+                            {t('dashboard.upgradePro')}
+                        </h3>
+                        <p className="text-white/70 dark:text-black/70 font-medium max-w-xl">
+                            {t('dashboard.upgradeDesc')}
+                        </p>
                     </div>
-                    <Button asChild className="mt-4 md:mt-0 bg-white text-blue-600 hover:bg-gray-100 font-bold whitespace-nowrap px-8">
+                    <Button asChild className="relative z-10 mt-6 md:mt-0 bg-white text-black hover:bg-white/90 dark:bg-black dark:text-white dark:hover:bg-black/90 font-black text-lg h-14 px-10 whitespace-nowrap border-0 rounded-xl transition-transform hover:scale-105">
                         <Link href="/pricing">
-                            Upgrade Now
+                            {t('dashboard.upgradeBtn')}
                         </Link>
                     </Button>
                 </div>
@@ -238,7 +273,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                                         <button
                                                             onClick={() => handleDeleteResume(resume.id)}
                                                             className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
-                                                            title="Delete CV"
+                                                            title={t('toast.deleteCv') || "Delete CV"}
                                                         >
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
@@ -436,6 +471,29 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                 </Button>
                             </form>
 
+                            {isJobSearching && (
+                                <div className="mb-8 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
+                                            <span className="text-sm font-semibold text-black dark:text-white">
+                                                {t('dashboard.searchingJobs')}
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-bold text-black/60 dark:text-white/60">{Math.round(jobProgress)}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
+                                            style={{ width: `${jobProgress}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-black/40 dark:text-white/40 mt-3">
+                                        {t('dashboard.searchingNote')}
+                                    </p>
+                                </div>
+                            )}
+
                             <div className="space-y-4">
                                 {jobs.map((job, idx) => (
                                     <div key={idx} className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-colors">
@@ -486,6 +544,29 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                     {t('dashboard.findCompaniesBtn')}
                                 </Button>
                             </form>
+
+                            {isCompanySearching && (
+                                <div className="mb-8 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5">
+                                    <div className="flex justify-between items-center mb-3">
+                                        <div className="flex items-center gap-2">
+                                            <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
+                                            <span className="text-sm font-semibold text-black dark:text-white">
+                                                {t('dashboard.searchingCompanies')}
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-bold text-black/60 dark:text-white/60">{Math.round(compProgress)}%</span>
+                                    </div>
+                                    <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-300 ease-out"
+                                            style={{ width: `${compProgress}%` }}
+                                        />
+                                    </div>
+                                    <p className="text-xs text-black/40 dark:text-white/40 mt-3">
+                                        {t('dashboard.searchingNote')}
+                                    </p>
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {companies.map((comp, idx) => (

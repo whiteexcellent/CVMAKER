@@ -1,6 +1,12 @@
 export const vi = {
     dashboard: {
         title: 'Bảng điều khiển',
+        credits: 'Tín dụng',
+        settings: 'Cài đặt',
+        logout: 'Đăng xuất',
+        upgradePro: 'Nâng cấp lên Pro',
+        upgradeDesc: 'Mở khóa tất cả các tính năng AI và số lượng CV không giới hạn.',
+        upgradeBtn: 'Nâng cấp ngay',
         coverLetters: 'Thư xin việc',
         presentations: 'Thuyết trình',
         builder: 'Tạo CV',
@@ -58,7 +64,10 @@ export const vi = {
         documentType: 'Tài liệu',
         cvType: 'CV',
         coverLetterType: 'Thư xin việc',
-        presentationType: 'Thuyết trình'
+        presentationType: 'Thuyết trình',
+        searchingJobs: 'Đang tìm kiếm những công việc tốt nhất cho bạn...',
+        searchingCompanies: 'Đang phân tích các công ty mục tiêu...',
+        searchingNote: 'Quá trình này có thể mất tới 20 giây. Vui lòng chờ.'
     },
     common: {
         views: 'lượt xem',
@@ -188,8 +197,8 @@ export const vi = {
         loading: 'Phê chuẩn Giao Dịch...'
     },
     auth: {
-        userNotFound: 'We could not find an account with that email address. Please check for typos or sign up instead.',
-        welcomeBack: 'Chào mừng quyến luyến bạn nhé',
+        userNotFound: 'Chúng tôi không thể tìm thấy tài khoản với email này. Vui lòng kiểm tra lỗi chính tả hoặc đăng ký.',
+        welcomeBack: 'Chào mừng quay trở lại',
         loginDesc: 'Bạn chỉ cần điền hòm mail để thâm nhập hệ thống bí mật của cá nhân mình.',
         emailLabel: 'Giao diện Hòm Thư Đặc Thù',
         emailPlaceholder: 'tructiep@mailkhach.com',
@@ -205,9 +214,12 @@ export const vi = {
         checkEmail: 'Chờ xíu, kiểm tra thư ngỏ hòm',
         checkEmailDesc: 'Đã truyền tin mật khóa siêu an toàn đến bạn.',
         safelyClose: 'Cố lên nhen, thẻ này khép lại an vui rồi.',
-        returnHome: 'Chuyển hồi Homepage Hệ Sinh Thái'
+        returnHome: 'Chuyển hồi Homepage Hệ Sinh Thái',
+        devMode: 'Chế độ nhà phát triển',
+        signInPassword: 'Đăng nhập bằng mật khẩu'
     },
     toast: {
+        cvDeleted: 'Xóa CV thành công',
         cvDeleted: 'Xóa CV thành công',
         cvDeleteError: 'Không thể xóa CV',
         generatingPublicLink: 'Đang tạo liên kết công khai...',
@@ -220,7 +232,7 @@ export const vi = {
         importingLinkedin: 'Đang khởi tạo Agent... Quá trình này có thể mất tới 20 giây.',
         importSuccess: 'Đã nhập thành công! (Sử dụng 1 Tín dụng)',
         importFailed: 'Nhập không thành công. Vui lòng thử lại sau.',
-        invalidJobUrl: 'Vui lòng nhập URL công việc Indeed, Glassdoor hoặc LinkedIn hợp lệ',
+        invalidJobUrl: 'Vui lòng nhập URL công việc hợp lệ',
         scrapingJob: 'Đang trích xuất yêu cầu công việc... Quá trình này có thể mất tới 20 giây.',
         scrapeSuccess: 'Công việc đã được nhập: {company} - {role} (Sử dụng 2 Tín dụng)',
         scrapeFailed: 'Trích xuất dữ liệu không thành công. Vui lòng thử lại sau.',
@@ -231,33 +243,32 @@ export const vi = {
         clGenerated: 'Đã tạo Thư xin việc!',
         selectCvRoleCompany: 'Vui lòng chọn một CV, nhập vị trí mục tiêu và công ty mục tiêu.',
         presentationGenerated: 'Đã tạo Bảng thuyết trình!'
-    }
-,
-    settings: {
-        title: 'Account & Preferences',
-        subtitle: 'Manage your subscription, view your credits, and configure your OmniCV experience.',
-        accountDetails: 'Account Details',
-        accountDesc: 'Your personal profile information.',
-        emailAddress: 'Email Address',
-        accountId: 'Account ID',
-        subscriptionCredits: 'Subscription & Credits',
-        subscriptionDesc: 'Manage your plan and OmniCV Generation limits.',
-        currentPlan: 'Current Plan',
-        proUnlimited: 'Pro Unlimited',
-        freeTier: 'Free Tier',
-        availableCredits: 'Available Credits',
-        unlimited: 'Unlimited',
-        manageSubscription: 'Manage Subscription',
-        preferences: 'Preferences',
-        preferencesDesc: 'Customize your application settings.',
-        outputLanguage: 'Output Language',
-        dangerZone: 'Danger Zone',
-        dangerZoneDesc: 'Irreversible actions regarding your data.',
-        deleteWarning: 'Deleting your account will permanently erase your profile, generated CVs, Cover Letters, and Presentations. This action cannot be undone.',
-        deleteAccountConfirm: 'Are you absolutely sure you want to delete your account? This will permanently delete all your CVs, Cover Letters, and data. This action CANNOT be undone.',
-        permanentlyDelete: 'Permanently Delete Account',
-        deletingAccount: 'Deleting account and wiping data...',
-        accountDeleted: 'Account permanently deleted. We are sorry to see you go.',
-        languageSet: 'Language set to {val}. Refreshing to apply changes...'
     },
+    settings: {
+        title: 'Tài khoản & Tùy chọn',
+        subtitle: 'Quản lý đăng ký của bạn, xem tín dụng và cấu hình trải nghiệm OmniCV.',
+        accountDetails: 'Chi tiết Tài khoản',
+        accountDesc: 'Thông tin hồ sơ cá nhân của bạn.',
+        emailAddress: 'Địa chỉ Email',
+        accountId: 'ID Tài khoản',
+        subscriptionCredits: 'Đăng ký & Tín dụng',
+        subscriptionDesc: 'Quản lý gói của bạn và giới hạn tạo OmniCV.',
+        currentPlan: 'Gói Hiện tại',
+        proUnlimited: 'Pro Không giới hạn',
+        freeTier: 'Gói Miễn phí',
+        availableCredits: 'Tín dụng Khả dụng',
+        unlimited: 'Không giới hạn',
+        manageSubscription: 'Quản lý Đăng ký',
+        preferences: 'Tùy chọn',
+        preferencesDesc: 'Tùy chỉnh cài đặt ứng dụng.',
+        outputLanguage: 'Ngôn ngữ Đầu ra',
+        dangerZone: 'Vùng Nguy hiểm',
+        dangerZoneDesc: 'Các hành động không thể đảo ngược đối với dữ liệu của bạn.',
+        deleteWarning: 'Xóa tài khoản sẽ xóa vĩnh viễn hồ sơ, CV, Thư xin việc và Thuyết trình đã tạo. Hành động này không thể hoàn tác.',
+        deleteAccountConfirm: 'Bạn có chắc chắn muốn xóa tài khoản? Tất cả dữ liệu của bạn sẽ bị xóa vĩnh viễn. Hành động này KHÔNG THỂ hoàn tác.',
+        permanentlyDelete: 'Xóa Tài khoản Vĩnh viễn',
+        deletingAccount: 'Đang xóa tài khoản và xóa sạch dữ liệu...',
+        accountDeleted: 'Tài khoản đã bị xóa vĩnh viễn. Rất tiếc khi thấy bạn rời đi.',
+        languageSet: 'Ngôn ngữ được thiết lập thành {val}. Đang làm mới để áp dụng thay đổi...'
+    }
 };

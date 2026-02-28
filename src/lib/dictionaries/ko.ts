@@ -1,6 +1,12 @@
 export const ko = {
     dashboard: {
         title: '대시보드',
+        credits: '크레딧',
+        settings: '설정',
+        logout: '로그아웃',
+        upgradePro: 'Pro로 업그레이드',
+        upgradeDesc: '모든 AI 기능과 무제한 이력서 생성을 잠금 해제하세요.',
+        upgradeBtn: '지금 업그레이드',
         coverLetters: '커버레터',
         presentations: '프레젠테이션',
         builder: '이력서 빌더',
@@ -58,7 +64,10 @@ export const ko = {
         documentType: '문서',
         cvType: '이력서',
         coverLetterType: '커버레터',
-        presentationType: '프레젠테이션'
+        presentationType: '프레젠테이션',
+        searchingJobs: '최적의 채용 공고를 검색 중...',
+        searchingCompanies: '목표 기업을 분석 중...',
+        searchingNote: '이 작업은 최대 20초가 소요될 수 있습니다. 잠시만 기다려 주세요.'
     },
     common: {
         views: '조회',
@@ -205,7 +214,9 @@ export const ko = {
         checkEmail: '이메일을 확인하세요',
         checkEmailDesc: '마법의 링크를 보냈습니다. 클릭하여 안전하게 로그인하세요.',
         safelyClose: '이 창을 닫아도 됩니다.',
-        returnHome: '홈으로 돌아가기'
+        returnHome: '홈으로 돌아가기',
+        devMode: '개발자 모드',
+        signInPassword: '비밀번호로 로그인'
     },
     toast: {
         cvDeleted: '이력서가 성공적으로 삭제되었습니다.',
@@ -231,33 +242,32 @@ export const ko = {
         clGenerated: '자기소개서가 생성되었습니다!',
         selectCvRoleCompany: '이력서를 선택하고 목표 직책 및 기업을 입력하세요.',
         presentationGenerated: '프레젠테이션이 생성되었습니다!'
-    }
-,
-    settings: {
-        title: 'Account & Preferences',
-        subtitle: 'Manage your subscription, view your credits, and configure your OmniCV experience.',
-        accountDetails: 'Account Details',
-        accountDesc: 'Your personal profile information.',
-        emailAddress: 'Email Address',
-        accountId: 'Account ID',
-        subscriptionCredits: 'Subscription & Credits',
-        subscriptionDesc: 'Manage your plan and OmniCV Generation limits.',
-        currentPlan: 'Current Plan',
-        proUnlimited: 'Pro Unlimited',
-        freeTier: 'Free Tier',
-        availableCredits: 'Available Credits',
-        unlimited: 'Unlimited',
-        manageSubscription: 'Manage Subscription',
-        preferences: 'Preferences',
-        preferencesDesc: 'Customize your application settings.',
-        outputLanguage: 'Output Language',
-        dangerZone: 'Danger Zone',
-        dangerZoneDesc: 'Irreversible actions regarding your data.',
-        deleteWarning: 'Deleting your account will permanently erase your profile, generated CVs, Cover Letters, and Presentations. This action cannot be undone.',
-        deleteAccountConfirm: 'Are you absolutely sure you want to delete your account? This will permanently delete all your CVs, Cover Letters, and data. This action CANNOT be undone.',
-        permanentlyDelete: 'Permanently Delete Account',
-        deletingAccount: 'Deleting account and wiping data...',
-        accountDeleted: 'Account permanently deleted. We are sorry to see you go.',
-        languageSet: 'Language set to {val}. Refreshing to apply changes...'
     },
+    settings: {
+        title: '계정 및 설정',
+        subtitle: '구독 관리, 크레딧 확인 및 OmniCV 환경을 설정합니다.',
+        accountDetails: '계정 상세',
+        accountDesc: '개인 프로필 정보.',
+        emailAddress: '이메일 주소',
+        accountId: '계정 ID',
+        subscriptionCredits: '구독 및 크레딧',
+        subscriptionDesc: '요금제 및 OmniCV 생성 한도를 관리합니다.',
+        currentPlan: '현재 요금제',
+        proUnlimited: 'Pro 무제한',
+        freeTier: '무료 티어',
+        availableCredits: '사용 가능한 크레딧',
+        unlimited: '무제한',
+        manageSubscription: '구독 관리',
+        preferences: '설정',
+        preferencesDesc: '애플리케이션 설정을 사용자 정의합니다.',
+        outputLanguage: '출력 언어',
+        dangerZone: '위험 지역',
+        dangerZoneDesc: '데이터와 관련된 되돌릴 수 없는 작업.',
+        deleteWarning: '계정을 삭제하면 프로필, 생성된 이력서, 자기소개서 및 프레젠테이션이 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+        deleteAccountConfirm: '계정을 삭제하시겠습니까? 모든 이력서, 자기소개서 및 데이터가 영구적으로 삭제됩니다. 이 작업은 되돌릴 수 없습니다.',
+        permanentlyDelete: '계정 영구 삭제',
+        deletingAccount: '계정을 삭제하고 데이터를 지우는 중...',
+        accountDeleted: '계정이 영구적으로 삭제되었습니다. 이용해 주셔서 감사합니다.',
+        languageSet: '언어가 {val}로 설정되었습니다. 변경 사항을 적용하기 위해 새로 고침 중...'
+    }
 };

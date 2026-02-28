@@ -65,7 +65,7 @@ export default async function SettingsPage() {
                             <ArrowLeft className="w-5 h-5" />
                         </Link>
                         <Link href="/" className="font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
-                            OMNICV Settings
+                            OMNICV
                         </Link>
                     </div>
 

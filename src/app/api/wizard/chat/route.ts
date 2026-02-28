@@ -75,10 +75,25 @@ Your Task & Persona Rules:
             finalMessagesToSend.push({ role: 'user', content: message });
         }
 
+        const coreMessages = finalMessagesToSend.map((msg: any) => {
+            let textContent = msg.content || '';
+            if (!textContent && Array.isArray(msg.parts)) {
+                textContent = msg.parts
+                    .filter((p: any) => p.type === 'text')
+                    .map((p: any) => p.text)
+                    .join('\n');
+            }
+
+            return {
+                role: (msg.role === 'model' || msg.role === 'assistant') ? 'assistant' : 'user',
+                content: textContent,
+            };
+        });
+
         const result = streamText({
             model: groq('llama-3.3-70b-versatile'),
             system: systemInstruction,
-            messages: finalMessagesToSend as any,
+            messages: coreMessages as any,
             tools: {
                 suggest_cv_content: tool({
                     description: 'Suggest text for the user to import into their CV fields.',

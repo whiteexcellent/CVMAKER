@@ -9,6 +9,12 @@ export const es = {
         findJobs: 'Buscar Empleo',
         findCompanies: 'Empresas Objetivo',
         analytics: 'Análisis y Enlaces',
+        credits: 'Créditos:',
+        settings: 'Ajustes',
+        logout: 'Cerrar sesión',
+        upgradePro: 'Mejorar a Pro',
+        upgradeDesc: 'Desbloquea generaciones ilimitadas de IA, cartas de presentación y buscadores de empleo premium.',
+        upgradeBtn: 'Mejorar ahora',
         startFromScratch: 'Empezar desde Cero',
         builderDesc: 'Usa nuestro asistente de IA para crear un currículum amigable con ATS.',
         aiWizard: 'Asistente de IA',
@@ -43,6 +49,9 @@ export const es = {
         jobKeywordLabel: 'Puesto o Palabra Clave',
         jobLocationLabel: 'Ubicación (ej. Remoto)',
         searchJobsBtn: 'Buscar Empleos',
+        searchingJobs: 'Buscando oportunidades de trabajo en vivo...',
+        searchingCompanies: 'Buscando empresas objetivo...',
+        searchingNote: 'Iniciando Agente Apify. Esto puede tardar 15-30 segundos.',
         apply: 'Aplicar',
         targetCompaniesDesc: 'Encuentra empresas similares en tu sector para candidaturas espontáneas.',
         companyKeywordLabel: 'Industria o Tema',
@@ -205,7 +214,9 @@ export const es = {
         checkEmail: 'Revisa tu correo',
         checkEmailDesc: 'Hemos enviado un enlace seguro. Haz clic para entrar.',
         safelyClose: 'Puedes cerrar esta pestaña.',
-        returnHome: 'Volver a Inicio'
+        returnHome: 'Volver a Inicio',
+        devMode: 'Modo Dev — Inicio de sesión con contraseña',
+        signInPassword: 'Iniciar sesión con contraseña'
     },
     toast: {
         cvDeleted: 'CV eliminado correctamente',
@@ -231,8 +242,7 @@ export const es = {
         clGenerated: '¡Carta de presentación generada!',
         selectCvRoleCompany: 'Por favor, selecciona un CV, introduce un rol objetivo y una empresa objetivo.',
         presentationGenerated: '¡Presentación generada!'
-    }
-,
+    },
     settings: {
         title: 'Cuenta y Preferencias',
         subtitle: 'Administre su suscripción, vea sus créditos y configure su experiencia OmniCV.',

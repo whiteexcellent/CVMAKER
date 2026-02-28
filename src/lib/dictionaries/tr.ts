@@ -9,6 +9,12 @@ export const tr = {
         findJobs: 'İş İlanı Bul',
         findCompanies: 'Şirket Bul',
         analytics: 'Analizler & Bağlantılar',
+        credits: 'Krediler:',
+        settings: 'Ayarlar',
+        logout: 'Çıkış Yap',
+        upgradePro: 'Pro\'ya Yükselt',
+        upgradeDesc: 'Sınırsız AI nesilleri, ön yazılar ve premium iş tarayıcılarının kilidini açın.',
+        upgradeBtn: 'Şimdi Yükselt',
         startFromScratch: 'Sıfırdan Başla',
         builderDesc: 'Çarpıcı, ATS uyumlu bir özgeçmiş oluşturmak için yapay zeka destekli sihirbazımızı kullanın.',
         aiWizard: 'Yapay Zeka Seçenekleri',
@@ -58,7 +64,10 @@ export const tr = {
         documentType: 'Belge',
         cvType: 'CV',
         coverLetterType: 'Motive Mektubu',
-        presentationType: 'Sunum'
+        presentationType: 'Sunum',
+        searchingJobs: 'Canlı iş fırsatları aranıyor...',
+        searchingCompanies: 'Hedef şirketler bulunuyor...',
+        searchingNote: 'Apify Ajanı başlatılıyor. Bu işlem 15-30 saniye sürebilir.'
     },
     common: {
         views: 'görüntülenme',

@@ -1,6 +1,12 @@
 export const ja = {
     dashboard: {
         title: 'ダッシュボード',
+        credits: 'クレジット',
+        settings: '設定',
+        logout: 'ログアウト',
+        upgradePro: 'Proにアップグレード',
+        upgradeDesc: 'すべてのAI機能と無制限の履歴書作成を解除します。',
+        upgradeBtn: '今すぐアップグレード',
         coverLetters: 'カバーレター',
         presentations: 'プレゼンテーション',
         builder: '履歴書ビルダー',
@@ -58,7 +64,10 @@ export const ja = {
         documentType: 'ドキュメント',
         cvType: 'CV',
         coverLetterType: 'カバーレター',
-        presentationType: 'プレゼン'
+        presentationType: 'プレゼン',
+        searchingJobs: '最適な求人を検索中...',
+        searchingCompanies: '対象企業を分析中...',
+        searchingNote: 'これには最大20秒かかる場合があります。少々お待ちください。'
     },
     common: {
         views: '閲覧',
@@ -205,7 +214,9 @@ export const ja = {
         checkEmail: 'メールを確認してください',
         checkEmailDesc: '安全にログインするためのリンクを送信しました。',
         safelyClose: 'このウィンドウは閉じることができます。',
-        returnHome: 'ホームに戻る'
+        returnHome: 'ホームに戻る',
+        devMode: '開発者モード',
+        signInPassword: 'パスワードでサインイン'
     },
     toast: {
         cvDeleted: '履歴書が正常に削除されました',
@@ -231,33 +242,32 @@ export const ja = {
         clGenerated: 'カバーレターが生成されました！',
         selectCvRoleCompany: '履歴書を選択し、ターゲットとする役職と企業を入力してください。',
         presentationGenerated: 'プレゼンテーションが生成されました！'
-    }
-,
-    settings: {
-        title: 'Account & Preferences',
-        subtitle: 'Manage your subscription, view your credits, and configure your OmniCV experience.',
-        accountDetails: 'Account Details',
-        accountDesc: 'Your personal profile information.',
-        emailAddress: 'Email Address',
-        accountId: 'Account ID',
-        subscriptionCredits: 'Subscription & Credits',
-        subscriptionDesc: 'Manage your plan and OmniCV Generation limits.',
-        currentPlan: 'Current Plan',
-        proUnlimited: 'Pro Unlimited',
-        freeTier: 'Free Tier',
-        availableCredits: 'Available Credits',
-        unlimited: 'Unlimited',
-        manageSubscription: 'Manage Subscription',
-        preferences: 'Preferences',
-        preferencesDesc: 'Customize your application settings.',
-        outputLanguage: 'Output Language',
-        dangerZone: 'Danger Zone',
-        dangerZoneDesc: 'Irreversible actions regarding your data.',
-        deleteWarning: 'Deleting your account will permanently erase your profile, generated CVs, Cover Letters, and Presentations. This action cannot be undone.',
-        deleteAccountConfirm: 'Are you absolutely sure you want to delete your account? This will permanently delete all your CVs, Cover Letters, and data. This action CANNOT be undone.',
-        permanentlyDelete: 'Permanently Delete Account',
-        deletingAccount: 'Deleting account and wiping data...',
-        accountDeleted: 'Account permanently deleted. We are sorry to see you go.',
-        languageSet: 'Language set to {val}. Refreshing to apply changes...'
     },
+    settings: {
+        title: 'アカウントと設定',
+        subtitle: 'サブスクリプションの管理、クレジットの確認、OmniCVエクスペリエンスの設定を行います。',
+        accountDetails: 'アカウント詳細',
+        accountDesc: '個人プロフィール情報。',
+        emailAddress: 'メールアドレス',
+        accountId: 'アカウントID',
+        subscriptionCredits: 'サブスクリプションとクレジット',
+        subscriptionDesc: 'プランとOmniCV生成制限を管理します。',
+        currentPlan: '現在のプラン',
+        proUnlimited: 'Pro無制限',
+        freeTier: '無料ティア',
+        availableCredits: '利用可能なクレジット',
+        unlimited: '無制限',
+        manageSubscription: 'サブスクリプション管理',
+        preferences: '設定',
+        preferencesDesc: 'アプリケーションの設定をカスタマイズします。',
+        outputLanguage: '出力言語',
+        dangerZone: '危険ゾーン',
+        dangerZoneDesc: 'データに関する取り消し不能なアクション。',
+        deleteWarning: 'アカウントを削除すると、プロフィール、生成された履歴書、カバーレター、プレゼンテーションが完全に消去されます。この操作は元に戻せません。',
+        deleteAccountConfirm: '本当にアカウントを削除してもよろしいですか？これにより、すべての履歴書、カバーレター、およびデータが完全に削除されます。この操作は元に戻せません。',
+        permanentlyDelete: 'アカウントを永久に削除',
+        deletingAccount: 'アカウントを削除し、データを消去中...',
+        accountDeleted: 'アカウントが永久に削除されました。ご利用ありがとうございました。',
+        languageSet: '言語が {val} に設定されました。変更を適用するためにリロードしています...'
+    }
 };
