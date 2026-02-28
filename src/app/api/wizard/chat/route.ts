@@ -104,7 +104,6 @@ Your Task & Persona Rules:
                 })
             }
         });
-
         return result.toTextStreamResponse();
 
     } catch (error: any) {
