@@ -220,7 +220,6 @@ export const vi = {
     },
     toast: {
         cvDeleted: 'Xóa CV thành công',
-        cvDeleted: 'Xóa CV thành công',
         cvDeleteError: 'Không thể xóa CV',
         generatingPublicLink: 'Đang tạo liên kết công khai...',
         linkCopied: 'Đã sao chép liên kết vào khay nhớ tạm! (Hoạt động trong 7 ngày)',
