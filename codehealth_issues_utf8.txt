@@ -1,0 +1,177 @@
+﻿# codehealth AI Refactoring Prompt
+
+## Project Context
+- **Framework:** Next.js
+- **Files scanned:** 108
+- **Health score:** 69 / 100 (Good)
+- **Issues found:** 1 error, 30 warnings across 15 files
+
+## Errors (1)
+These issues are likely to cause runtime failures or incorrect behavior.
+
+### `fetch-in-effect` ÔÇö fetch() inside useEffect ÔÇö use a data fetching library instead
+**Category:** correctness | **Occurrences:** 1
+
+**Affected locations:**
+- `src/app/share/[shareId]/ViewTracker.tsx` line 13
+
+**Code context (first occurrence):**
+```tsx
+   11 Ôöé          hasTracked.current = true;
+   12 Ôöé  
+ÔûÂ  13 Ôöé          fetch('/api/share/track-view', {
+   14 Ôöé              method: 'POST',
+   15 Ôöé              headers: { 'Content-Type': 'application/json' },
+```
+
+**Suggested fix:**
+```tsx
+const { data, isLoading } = useQuery({
+  queryKey: ['your-key'],
+  queryFn: () => fetch('/api/endpoint').then(r => r.json())
+});
+```
+
+**Additional notes:**
+- TanStack Query (react-query) handles caching, deduplication, and background refetching
+- SWR is a lighter alternative: const { data } = useSWR(key, fetcher)
+- Race conditions in useEffect fetches are hard to handle ÔÇö libraries do this for you
+
+---
+
+## Warnings (30)
+These issues represent code quality, performance, or accessibility improvements.
+
+### `index-as-key` ÔÇö Array index used as key ÔÇö use a stable unique ID instead
+**Category:** best-practice | **Occurrences:** 22
+
+**Affected locations:**
+- `src/app/dashboard/DashboardClient.tsx` line 499, line 573
+- `src/app/pricing/page.tsx` line 140
+- `src/components/resume/MinimalistPDF.tsx` line 164, line 171, line 186, line 204
+- `src/components/templates/MinimalistTemplate.tsx` line 121, line 128, line 143, line 161
+- `src/components/ui/animated-glassy-pricing.tsx` line 194
+- _+ 4 more files_
+
+**Suggested fix:**
+```tsx
+// Use a stable unique identifier from the data:
+items.map((item) => (
+  <Component key={item.id} {...item} />
+))
+
+// If items have no ID, add one when creating the array:
+const itemsWithIds = rawItems.map((item) => ({ ...item, id: item.id ?? crypto.randomUUID() }));
+```
+
+**Additional notes:**
+- Index keys cause incorrect reconciliation when items are reordered or filtered
+- If data has no natural ID, generate stable IDs at the data-fetching layer
+
+---
+
+### `large-component` ÔÇö Component too large ÔÇö consider splitting into smaller components
+**Category:** performance | **Occurrences:** 3
+
+**Affected locations:**
+- `src/app/dashboard/DashboardClient.tsx` line 24
+- `src/app/wizard/page.tsx` line 21
+- `src/app/api/generate/route.ts` line 20
+
+**Suggested fix:**
+```tsx
+// Extract logical sections into smaller components:
+function DashboardClientHeader() { /* ... */ }
+function DashboardClientBody() { /* ... */ }
+function DashboardClientFooter() { /* ... */ }
+
+// Use custom hooks for complex logic:
+function useDashboardClientLogic() { /* state + effects */ }
+```
+
+**Additional notes:**
+- Extract custom hook for state + effect logic
+- Break JSX into sub-components
+- Aim for < 300 lines, < 6 hooks, < 30 JSX nodes
+
+---
+
+### `multiple-usestate` ÔÇö Multiple useState calls ÔÇö consider useReducer or a state object
+**Category:** best-practice | **Occurrences:** 2
+
+**Affected locations:**
+- `src/app/dashboard/DashboardClient.tsx` line 25
+- `src/app/wizard/page.tsx` line 23
+
+**Suggested fix:**
+```tsx
+const [state, dispatch] = useReducer(reducer, initialState);
+// Or group related state:
+const [formState, setFormState] = useState({
+  field1: '',
+  field2: '',
+  // ...
+});
+```
+
+**Additional notes:**
+- Consider if all state fields relate to the same concern
+- Alternatives: zustand, jotai for complex state management
+- Extract custom hook: useDashboardClientState()
+
+---
+
+### `a11y-label` ÔÇö Form element has no accessible label ÔÇö add aria-label or aria-labelledby
+**Category:** accessibility | **Occurrences:** 2
+
+**Affected locations:**
+- `src/components/ui/input.tsx` line 7
+- `src/components/ui/textarea.tsx` line 7
+
+**Suggested fix:**
+```tsx
+// Option 1: Use aria-label
+<input aria-label="Descriptive label" />
+
+// Option 2: Associate with a <label> element
+<label htmlFor="my-input">Label text</label>
+<input id="my-input" />
+
+// Option 3: Use aria-labelledby
+<span id="my-label">Label text</span>
+<input aria-labelledby="my-label" />
+```
+
+**Additional notes:**
+- WCAG 1.3.1: Form elements must have programmatic labels
+- Placeholder text is not a substitute for a label
+- If using id, ensure a <label htmlFor="..."> element is also present
+
+---
+
+### `use-search-params` ÔÇö useSearchParams() requires a Suspense boundary
+**Category:** correctness | **Occurrences:** 1
+
+**Affected locations:**
+- `src/app/success/page.tsx` line 15
+
+**Suggested fix:**
+```tsx
+// Wrap the component with Suspense:
+<Suspense fallback={<div>Loading...</div>}>
+  <SuccessPage />
+</Suspense>
+
+// Or use a separate client component with Suspense in the parent.
+```
+
+**Additional notes:**
+- Next.js requires Suspense because useSearchParams reads from a dynamic data source
+- Consider a loading skeleton as the Suspense fallback for better UX
+
+---
+
+---
+
+## Instructions for AI
+Review each rule group: explain why it is problematic, show a concrete fix from the first affected file.

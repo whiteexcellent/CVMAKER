@@ -191,7 +191,7 @@ export const PricingCard = ({
             <div className="card-divider w-full mb-5 h-px bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.09)_20%,rgba(255,255,255,0.22)_50%,rgba(255,255,255,0.09)_80%,transparent)]"></div>
             <ul className="flex flex-col gap-2 text-[14px] mb-6 font-sans text-white/90">
                 {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-2">
+                    <li key={feature} className="flex items-center gap-2">
                         <CheckIcon className="text-cyan-400 w-4 h-4" /> {feature}
                     </li>
                 ))}

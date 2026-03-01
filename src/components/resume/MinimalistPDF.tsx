@@ -161,14 +161,14 @@ export const MinimalistTemplate: React.FC<ResumePDFProps> = ({ data }) => (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Experience</Text>
                     {data.experience.map((exp, i) => (
-                        <View key={i} style={styles.experienceItem}>
+                        <View key={`${exp.company}-${i}`} style={styles.experienceItem}>
                             <View style={styles.jobHeader}>
                                 <Text style={styles.jobTitle}>{exp.title}</Text>
                                 <Text style={styles.jobDate}>{exp.duration}</Text>
                             </View>
                             <Text style={styles.jobCompany}>{exp.company}</Text>
                             {exp.bullets && exp.bullets.map((bullet: string, j: number) => (
-                                <View key={j} style={styles.bulletContainer}>
+                                <View key={`bullet-${j}`} style={styles.bulletContainer}>
                                     <Text style={styles.bulletPoint}>•</Text>
                                     <Text style={styles.bulletText}>{bullet}</Text>
                                 </View>
@@ -183,7 +183,7 @@ export const MinimalistTemplate: React.FC<ResumePDFProps> = ({ data }) => (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Education</Text>
                     {data.education.map((edu, i) => (
-                        <View key={i} style={styles.educationItem}>
+                        <View key={`${edu.institution}-${i}`} style={styles.educationItem}>
                             <View style={styles.jobHeader}>
                                 <Text style={styles.jobTitle}>{edu.degree}</Text>
                                 <Text style={styles.jobDate}>{edu.year}</Text>
@@ -201,7 +201,7 @@ export const MinimalistTemplate: React.FC<ResumePDFProps> = ({ data }) => (
                     <Text style={styles.sectionTitle}>Skills</Text>
                     <View style={styles.skillsContainer}>
                         {data.skills.map((skill, i) => (
-                            <Text key={i} style={styles.skillBadge}>{skill}</Text>
+                            <Text key={skill} style={styles.skillBadge}>{skill}</Text>
                         ))}
                     </View>
                 </View>

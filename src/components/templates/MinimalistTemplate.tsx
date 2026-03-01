@@ -118,14 +118,14 @@ export const MinimalistCVTemplate = ({ data, userFullName }: CVProps) => (
                 <View>
                     <Text style={styles.sectionTitle}>Experience</Text>
                     {data.experience.map((exp: any, i: number) => (
-                        <View key={i} style={styles.experienceItem}>
+                        <View key={`${exp.company}-${i}`} style={styles.experienceItem}>
                             <View style={styles.experienceHeader}>
                                 <Text style={styles.jobTitle}>{exp.title}</Text>
                                 <Text style={styles.date}>{exp.duration}</Text>
                             </View>
                             <Text style={styles.company}>{exp.company}</Text>
                             {exp.bullets && exp.bullets.map((bullet: string, j: number) => (
-                                <View key={j} style={styles.bulletPoint}>
+                                <View key={`bullet-${j}`} style={styles.bulletPoint}>
                                     <Text style={styles.bullet}>•</Text>
                                     <Text style={styles.bulletText}>{bullet}</Text>
                                 </View>
@@ -140,7 +140,7 @@ export const MinimalistCVTemplate = ({ data, userFullName }: CVProps) => (
                 <View>
                     <Text style={styles.sectionTitle}>Education</Text>
                     {data.education.map((edu: any, i: number) => (
-                        <View key={i} style={styles.educationItem}>
+                        <View key={`${edu.institution}-${i}`} style={styles.educationItem}>
                             <View style={styles.educationHeader}>
                                 <Text style={styles.jobTitle}>{edu.degree}</Text>
                                 <Text style={styles.date}>{edu.year}</Text>
@@ -158,7 +158,7 @@ export const MinimalistCVTemplate = ({ data, userFullName }: CVProps) => (
                     <Text style={styles.sectionTitle}>Skills</Text>
                     <View style={styles.skillsContainer}>
                         {data.skills.map((skill: string, i: number) => (
-                            <Text key={i} style={styles.skillBadge}>{skill}</Text>
+                            <Text key={skill} style={styles.skillBadge}>{skill}</Text>
                         ))}
                     </View>
                 </View>

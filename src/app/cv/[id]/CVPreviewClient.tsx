@@ -212,7 +212,7 @@ export default function CVPreviewClient({
                         <h2 className="text-lg font-bold uppercase tracking-widest text-black border-b border-black/20 pb-1 mb-3">Experience</h2>
                         <div className="space-y-5">
                             {(cvData.experience || []).map((exp, i) => (
-                                <div key={i} className={isEditing ? "p-3 border border-dashed border-black/20 bg-slate-50 rounded" : ""}>
+                                <div key={exp.company || `exp-${i}`} className={isEditing ? "p-3 border border-dashed border-black/20 bg-slate-50 rounded" : ""}>
                                     <div className="flex justify-between items-baseline mb-1">
                                         {isEditing ? (
                                             <div className="flex gap-2 w-full">
@@ -231,7 +231,7 @@ export default function CVPreviewClient({
                                     </div>
                                     <ul className="list-disc ml-4 space-y-1">
                                         {(exp.bullets || []).map((bullet, bIndex) => (
-                                            <li key={bIndex} className="text-sm text-black/90 leading-relaxed pl-1">
+                                            <li key={`bullet-${bIndex}`} className="text-sm text-black/90 leading-relaxed pl-1">
                                                 {isEditing ? (
                                                     <Textarea
                                                         value={bullet}
@@ -254,7 +254,7 @@ export default function CVPreviewClient({
                         <h2 className="text-lg font-bold uppercase tracking-widest text-black border-b border-black/20 pb-1 mb-3">Education</h2>
                         <div className="space-y-4">
                             {(cvData.education || []).map((edu, i) => (
-                                <div key={i} className={isEditing ? "p-3 border border-dashed border-black/20 bg-slate-50 rounded flex gap-2" : "flex justify-between items-baseline"}>
+                                <div key={edu.institution || edu.school || `edu-${i}`} className={isEditing ? "p-3 border border-dashed border-black/20 bg-slate-50 rounded flex gap-2" : "flex justify-between items-baseline"}>
                                     {isEditing ? (
                                         <>
                                             <Input value={edu.degree} onChange={(e) => handleEducationChange(i, 'degree', e.target.value)} className="font-bold text-sm h-8" />

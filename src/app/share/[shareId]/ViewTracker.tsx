@@ -2,6 +2,18 @@
 
 import { useEffect, useRef } from 'react';
 
+const trackView = async (shareId: string) => {
+    try {
+        await fetch('/api/share/track-view', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ shareId })
+        });
+    } catch (err) {
+        console.error("Failed to track view:", err);
+    }
+};
+
 export default function ViewTracker({ shareId }: { shareId: string }) {
     const hasTracked = useRef(false);
 
@@ -10,11 +22,7 @@ export default function ViewTracker({ shareId }: { shareId: string }) {
         if (hasTracked.current) return;
         hasTracked.current = true;
 
-        fetch('/api/share/track-view', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ shareId })
-        }).catch(err => console.error("Failed to track view:", err));
+        void trackView(shareId);
     }, [shareId]);
 
     return null; // Silent invisible component

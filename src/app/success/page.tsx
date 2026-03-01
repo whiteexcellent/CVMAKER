@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
@@ -10,7 +10,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { useTranslation } from '@/components/I18nProvider';
 
-export default function SuccessPage() {
+function SuccessPageContent() {
     const { t } = useTranslation();
     const searchParams = useSearchParams();
     const sessionId = searchParams.get('session_id'); // useful if we want to trace later
@@ -99,3 +99,10 @@ export default function SuccessPage() {
     );
 }
 
+export default function SuccessPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white dark:bg-black text-black dark:text-white">Loading...</div>}>
+            <SuccessPageContent />
+        </Suspense>
+    );
+}

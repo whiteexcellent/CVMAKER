@@ -65,7 +65,7 @@ export default function CoverLetterViewer({ coverLetter }: { coverLetter: any })
                         <div className="space-y-6">
                             {parsedContent.paragraphs?.length > 0 ? (
                                 parsedContent.paragraphs.map((p: string, i: number) => (
-                                    <p key={i}>{p}</p>
+                                    <p key={`para-${i}`}>{p}</p>
                                 ))
                             ) : (
                                 <p>{t('viewer.loading')}</p>

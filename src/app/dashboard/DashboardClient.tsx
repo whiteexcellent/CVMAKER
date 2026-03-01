@@ -13,6 +13,12 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useTranslation } from '@/components/I18nProvider'
 
+import { JobSearchTab } from './tabs/JobSearchTab'
+import { CompanySearchTab } from './tabs/CompanySearchTab'
+import { HistoryTab } from './tabs/HistoryTab'
+import { CoverLettersTab } from './tabs/CoverLettersTab'
+import { PresentationsTab } from './tabs/PresentationsTab'
+
 interface DashboardClientProps {
     totalCredits: number
     resumes: any[]
@@ -22,98 +28,33 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ totalCredits, resumes, coverLetters = [], presentations = [], isPro }: DashboardClientProps) {
-    const [isJobSearching, setIsJobSearching] = useState(false)
-    const [isCompanySearching, setIsCompanySearching] = useState(false)
-    const [isLinkedinImporting, setIsLinkedinImporting] = useState(false)
-    const [error, setError] = useState('')
-    const [deleteId, setDeleteId] = useState<string | null>(null)
-    const [localResumes, setLocalResumes] = useState(resumes)
-    const [localCoverLetters, setLocalCoverLetters] = useState(coverLetters)
-    const [localPresentations, setLocalPresentations] = useState(presentations)
+    const [state, setState] = useState({
+        isLinkedinImporting: false,
+        error: '',
+        deleteId: null as string | null,
+        localResumes: resumes,
+        localCoverLetters: coverLetters,
+        localPresentations: presentations,
+        linkedinUrl: ''
+    });
+
+    const updateState = (updates: Partial<typeof state>) => setState(prev => ({ ...prev, ...updates }));
+
+    const { isLinkedinImporting, error, deleteId, localResumes, localCoverLetters, localPresentations, linkedinUrl } = state;
+
+    const setIsLinkedinImporting = (val: boolean) => updateState({ isLinkedinImporting: val });
+    const setError = (val: string) => updateState({ error: val });
+    const setDeleteId = (val: string | null) => updateState({ deleteId: val });
+    const setLocalResumes = (fn: (prev: any[]) => any[]) => updateState({ localResumes: fn(state.localResumes) });
+    const setLinkedinUrl = (val: string) => updateState({ linkedinUrl: val });
+
     const router = useRouter()
     const { t } = useTranslation()
 
-    // States for Job Search
-    const [jobQuery, setJobQuery] = useState('')
-    const [jobLoc, setJobLoc] = useState('')
-    const [jobs, setJobs] = useState<any[]>([])
-    const [jobProgress, setJobProgress] = useState(0)
-    const jobProgressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-    // States for Company Search
-    const [compQuery, setCompQuery] = useState('')
-    const [compLoc, setCompLoc] = useState('')
-    const [companies, setCompanies] = useState<any[]>([])
-    const [compProgress, setCompProgress] = useState(0)
-    const compProgressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-    const startProgress = (setter: React.Dispatch<React.SetStateAction<number>>, intervalRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>) => {
-        setter(0)
-        if (intervalRef.current) clearInterval(intervalRef.current)
-        intervalRef.current = setInterval(() => {
-            setter(prev => {
-                if (prev >= 90) { if (intervalRef.current) clearInterval(intervalRef.current); return 90 }
-                return Math.min(prev + (90 - prev) * 0.04 + 0.3, 90)
-            })
-        }, 250)
-    }
+    // States for LinkedIn are now in the single state object
 
-    const finishProgress = (setter: React.Dispatch<React.SetStateAction<number>>, intervalRef: React.MutableRefObject<ReturnType<typeof setInterval> | null>) => {
-        if (intervalRef.current) clearInterval(intervalRef.current)
-        setter(100)
-        setTimeout(() => setter(0), 900)
-    }
-
-    // States for LinkedIn
-    const [linkedinUrl, setLinkedinUrl] = useState('')
-
-    const handleJobSearch = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!jobQuery) return
-        setIsJobSearching(true)
-        setJobs([])
-        setError('')
-        startProgress(setJobProgress, jobProgressRef)
-        try {
-            const res = await fetch('/api/cv/search-jobs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: jobQuery, location: jobLoc })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to fetch jobs')
-            setJobs(data.jobs || [])
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            finishProgress(setJobProgress, jobProgressRef)
-            setIsJobSearching(false)
-        }
-    }
-
-    const handleCompanySearch = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!compQuery) return
-        setIsCompanySearching(true)
-        setCompanies([])
-        setError('')
-        startProgress(setCompProgress, compProgressRef)
-        try {
-            const res = await fetch('/api/cv/search-companies', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query: compQuery, location: compLoc })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to fetch companies')
-            setCompanies(data.companies || [])
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            finishProgress(setCompProgress, compProgressRef)
-            setIsCompanySearching(false)
-        }
-    }
 
     const handleLinkedinImport = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -249,164 +190,15 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
 
                 {/* MY CVS (HISTORY) TAB */}
                 <TabsContent value="history">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                <FileText className="w-5 h-5" /> {t('dashboard.docHistory')}
-                            </CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.docHistoryDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            {localResumes && localResumes.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {localResumes.map((resume) => {
-                                        const parsedContent = typeof resume.content === 'string' ? JSON.parse(resume.content) : resume.content;
-                                        const title = parsedContent?.experience?.[0]?.title || t('dashboard.untitledCv');
-                                        const date = new Date(resume.created_at).toLocaleDateString();
-                                        return (
-                                            <div key={resume.id} className="p-5 flex flex-col justify-between rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-all">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h3 className="font-bold text-lg text-black dark:text-white line-clamp-1 pr-2">{title}</h3>
-                                                        <button
-                                                            onClick={() => handleDeleteResume(resume.id)}
-                                                            className="text-red-500 hover:text-red-700 p-1 flex-shrink-0"
-                                                            title={t('toast.deleteCv') || "Delete CV"}
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </div>
-                                                    <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-4">{t('dashboard.created')} {date}</p>
-                                                </div>
-                                                <Button asChild className="w-full bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10">
-                                                    <Link href={`/cv/${resume.id}`}>{t('dashboard.viewEdit')}</Link>
-                                                </Button>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="p-12 text-center rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10">
-                                    <h3 className="font-bold text-xl mb-2">{t('dashboard.noCvs')}</h3>
-                                    <p className="text-black/50 dark:text-white/50 mb-6">{t('dashboard.noCvsDesc')}</p>
-                                    <Button asChild className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold">
-                                        <Link href="/wizard">{t('dashboard.startBuilding')}</Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                    <HistoryTab resumes={localResumes} handleDeleteResume={handleDeleteResume} />                </TabsContent>
 
                 {/* COVER LETTERS TAB */}
                 <TabsContent value="cover-letters">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                    <MessageSquareText className="w-5 h-5" /> {t('dashboard.coverLetters')}
-                                </CardTitle>
-                                <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                    {t('dashboard.coverLettersDesc')}
-                                </CardDescription>
-                            </div>
-                            {localCoverLetters && localCoverLetters.length > 0 && (
-                                <Button asChild className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10 px-4">
-                                    <Link href="/cover-letter/new">
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        {t('dashboard.createLetter')}
-                                    </Link>
-                                </Button>
-                            )}
-                        </CardHeader>
-                        <CardContent>
-                            {localCoverLetters && localCoverLetters.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {localCoverLetters.map((cl) => {
-                                        const date = new Date(cl.created_at).toLocaleDateString()
-                                        return (
-                                            <div key={cl.id} className="p-5 flex flex-col justify-between rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-all">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h3 className="font-bold text-lg text-black dark:text-white line-clamp-1 pr-2">{cl.title || t('dashboard.untitledLetter')}</h3>
-                                                    </div>
-                                                    <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-4">{t('dashboard.created')} {date}</p>
-                                                </div>
-                                                <Button asChild className="w-full bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10">
-                                                    <Link href={`/cover-letter/${cl.id}`}>{t('dashboard.viewEdit')}</Link>
-                                                </Button>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="p-12 text-center rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10">
-                                    <h3 className="font-bold text-xl mb-2">{t('dashboard.noLetters')}</h3>
-                                    <p className="text-black/50 dark:text-white/50 mb-6">{t('dashboard.noLettersDesc')}</p>
-                                    <Button asChild className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold">
-                                        <Link href="/cover-letter/new">{t('dashboard.createLetter')}</Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                    <CoverLettersTab coverLetters={localCoverLetters} />                </TabsContent>
 
                 {/* PRESENTATIONS TAB */}
                 <TabsContent value="presentations">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                    <MonitorPlay className="w-5 h-5" /> {t('dashboard.presentations')}
-                                </CardTitle>
-                                <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                    {t('dashboard.presentationsDesc')}
-                                </CardDescription>
-                            </div>
-                            {localPresentations && localPresentations.length > 0 && (
-                                <Button asChild className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10 px-4">
-                                    <Link href="/presentation/new">
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        {t('dashboard.generatePresentation')}
-                                    </Link>
-                                </Button>
-                            )}
-                        </CardHeader>
-                        <CardContent>
-                            {localPresentations && localPresentations.length > 0 ? (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {localPresentations.map((pres) => {
-                                        const date = new Date(pres.created_at).toLocaleDateString()
-                                        return (
-                                            <div key={pres.id} className="p-5 flex flex-col justify-between rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-all">
-                                                <div>
-                                                    <div className="flex justify-between items-start mb-2">
-                                                        <h3 className="font-bold text-lg text-black dark:text-white line-clamp-1 pr-2">{pres.target_company || t('dashboard.interviewPrep')}</h3>
-                                                    </div>
-                                                    <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-4">{t('dashboard.created')} {date}</p>
-                                                </div>
-                                                <Button asChild className="w-full bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10">
-                                                    <Link href={`/presentation/${pres.id}`}>{t('dashboard.viewPresentation')}</Link>
-                                                </Button>
-                                            </div>
-                                        )
-                                    })}
-                                </div>
-                            ) : (
-                                <div className="p-12 text-center rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10">
-                                    <h3 className="font-bold text-xl mb-2">{t('dashboard.noPresentations')}</h3>
-                                    <p className="text-black/50 dark:text-white/50 mb-6">{t('dashboard.noPresentationsDesc')}</p>
-                                    <Button asChild className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold">
-                                        <Link href="/presentation/new">{t('dashboard.generatePresentation')}</Link>
-                                    </Button>
-                                </div>
-                            )}
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                    <PresentationsTab presentations={localPresentations} />                </TabsContent>
 
                 {/* LINKEDIN IMPORT TAB */}
                 <TabsContent value="linkedin">
@@ -442,151 +234,12 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
 
                 {/* FIND JOBS TAB */}
                 <TabsContent value="jobs">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                <Briefcase className="w-5 h-5" /> {t('dashboard.discoverOpportunities')}
-                            </CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.discoverDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleJobSearch} className="flex flex-col md:flex-row gap-4 mb-8">
-                                <Input
-                                    placeholder={t('dashboard.jobKeywordLabel')}
-                                    value={jobQuery}
-                                    onChange={(e) => setJobQuery(e.target.value)}
-                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 focus-visible:ring-black dark:focus-visible:ring-white"
-                                />
-                                <Input
-                                    placeholder={t('dashboard.jobLocationLabel')}
-                                    value={jobLoc}
-                                    onChange={(e) => setJobLoc(e.target.value)}
-                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 md:w-1/3 focus-visible:ring-black dark:focus-visible:ring-white"
-                                />
-                                <Button type="submit" disabled={isJobSearching} className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black h-11 font-bold">
-                                    {isJobSearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
-                                    {t('dashboard.searchJobsBtn')}
-                                </Button>
-                            </form>
-
-                            {isJobSearching && (
-                                <div className="mb-8 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
-                                            <span className="text-sm font-semibold text-black dark:text-white">
-                                                {t('dashboard.searchingJobs')}
-                                            </span>
-                                        </div>
-                                        <span className="text-sm font-bold text-black/60 dark:text-white/60">{Math.round(jobProgress)}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${jobProgress}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-black/40 dark:text-white/40 mt-3">
-                                        {t('dashboard.searchingNote')}
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className="space-y-4">
-                                {jobs.map((job, idx) => (
-                                    <div key={idx} className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-colors">
-                                        <div className="flex justify-between items-start">
-                                            <div>
-                                                <h4 className="font-bold text-black dark:text-white text-lg">{job.title}</h4>
-                                                <p className="text-sm text-black/60 dark:text-white/60 font-medium">{job.company} • {job.location}</p>
-                                            </div>
-                                            <Button variant="outline" size="sm" className="border-black/20 dark:border-white/20 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 font-bold" asChild>
-                                                <a href={job.url} target="_blank" rel="noopener noreferrer">{t('dashboard.apply')}</a>
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-black/50 dark:text-white/50 mt-3 line-clamp-2 md:line-clamp-3 leading-relaxed">{job.snippet}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <JobSearchTab />
                 </TabsContent>
 
                 {/* FIND COMPANIES TAB */}
                 <TabsContent value="companies">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                <Building2 className="w-5 h-5" /> {t('dashboard.findCompanies')}
-                            </CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.targetCompaniesDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleCompanySearch} className="flex flex-col md:flex-row gap-4 mb-8">
-                                <Input
-                                    placeholder={t('dashboard.companyKeywordLabel')}
-                                    value={compQuery}
-                                    onChange={(e) => setCompQuery(e.target.value)}
-                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 focus-visible:ring-black dark:focus-visible:ring-white"
-                                />
-                                <Input
-                                    placeholder={t('dashboard.companyLocationLabel')}
-                                    value={compLoc}
-                                    onChange={(e) => setCompLoc(e.target.value)}
-                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 md:w-1/3 focus-visible:ring-black dark:focus-visible:ring-white"
-                                />
-                                <Button type="submit" disabled={isCompanySearching} className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-11">
-                                    {isCompanySearching ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4 mr-2" />}
-                                    {t('dashboard.findCompaniesBtn')}
-                                </Button>
-                            </form>
-
-                            {isCompanySearching && (
-                                <div className="mb-8 rounded-xl overflow-hidden border border-black/10 dark:border-white/10 bg-slate-50 dark:bg-white/5 p-5">
-                                    <div className="flex justify-between items-center mb-3">
-                                        <div className="flex items-center gap-2">
-                                            <Loader2 className="w-4 h-4 animate-spin text-black dark:text-white" />
-                                            <span className="text-sm font-semibold text-black dark:text-white">
-                                                {t('dashboard.searchingCompanies')}
-                                            </span>
-                                        </div>
-                                        <span className="text-sm font-bold text-black/60 dark:text-white/60">{Math.round(compProgress)}%</span>
-                                    </div>
-                                    <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-300 ease-out"
-                                            style={{ width: `${compProgress}%` }}
-                                        />
-                                    </div>
-                                    <p className="text-xs text-black/40 dark:text-white/40 mt-3">
-                                        {t('dashboard.searchingNote')}
-                                    </p>
-                                </div>
-                            )}
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {companies.map((comp, idx) => (
-                                    <div key={idx} className="p-4 rounded-xl bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 flex flex-col justify-between hover:border-black/30 dark:hover:border-white/30 transition-colors">
-                                        <div>
-                                            <h4 className="font-bold text-black dark:text-white text-lg line-clamp-1">{comp.title}</h4>
-                                            <p className="text-xs text-black/50 dark:text-white/50 mt-1 uppercase font-semibold tracking-wider">{comp.category}</p>
-                                            <p className="text-sm mt-3 text-black/70 dark:text-white/70 line-clamp-1">📍 {comp.address}</p>
-                                            <p className="text-sm mt-1 text-black/70 dark:text-white/70 font-medium">⭐ {comp.rating} ({comp.reviews} reviews)</p>
-                                        </div>
-                                        {comp.website && (
-                                            <Button variant="link" className="mt-4 p-0 h-auto text-black dark:text-white hover:text-black/70 dark:hover:text-white/70 font-bold self-start" asChild>
-                                                <a href={comp.website} target="_blank" rel="noopener noreferrer">{t('dashboard.visitWebsite')}</a>
-                                            </Button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <CompanySearchTab />
                 </TabsContent>
                 {/* ANALYTICS TAB */}
                 <TabsContent value="analytics">

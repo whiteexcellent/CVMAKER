@@ -1,0 +1,29 @@
+﻿[1mcodehealth v1.1.0[22m[2m ┬À Next.js[22m[2m ┬À 108 files scanned[22m
+
+  [31mÔ£ù[39m  [1mfetch() inside useEffect ÔÇö use a data fetching library instead[22m  
+     [2mconst { data, isLoading } = useQuery({[22m
+
+  [33mÔÜá[39m  [1mArray index used as key ÔÇö use a stable unique ID instead[22m  [2m(22)[22m
+     [2m// Use a stable unique identifier from the data:[22m
+
+  [33mÔÜá[39m  [1mComponent too large ÔÇö consider splitting into smaller components[22m  [2m(3)[22m
+     [2m// Extract logical sections into smaller components:[22m
+
+  [33mÔÜá[39m  [1mForm element has no accessible label ÔÇö add aria-label or aria-labelledby[22m  [2m(2)[22m
+     [2m// Option 1: Use aria-label[22m
+
+  [33mÔÜá[39m  [1mMultiple useState calls ÔÇö consider useReducer or a state object[22m  [2m(2)[22m
+     [2mconst [state, dispatch] = useReducer(reducer, initialState);[22m
+
+  [33mÔÜá[39m  [1museSearchParams() requires a Suspense boundary[22m  
+     [2m// Wrap the component with Suspense:[22m
+
+[2mÔöîÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÉ[22m
+[2mÔöé[22m  [1mcodehealth[22m                                                 [33m[1m69 / 100[22m[39m  [2mGood[22m[2mÔöé[22m
+[2mÔöé[22m  [33mÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûêÔûê[39m[2mÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæÔûæ[22m         [2mÔöé[22m
+[2mÔöé[22m                                                                 [2mÔöé[22m
+[2mÔöé[22m  [31mÔ£ù 1 error[39m   [33mÔÜá 30 warnings[39m   [2min 15/108 files[22m                [2mÔöé[22m
+[2mÔöé[22m                                                                 [2mÔöé[22m
+[2mÔöé[22m  [2mcorrectness[22m  [31mÔùÅÔùÅ[39m  [31m2[39m                [2mbest-practice[22m  [36mÔùÅÔùÅÔùÅÔùÅÔùÅ[39m  [36m24[39m [2mÔöé[22m
+[2mÔöé[22m  [2mperformance[22m  [33mÔùÅÔùÅÔùÅ[39m  [33m3[39m               [2maccessibility[22m  [1m[35mÔùÅÔùÅ[39m[22m  [1m[35m2[39m[22m     [2mÔöé[22m
+[2mÔööÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöÇÔöİ[22m

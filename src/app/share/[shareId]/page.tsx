@@ -157,7 +157,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                         <h2 className="font-bold text-lg border-b pb-2 mb-4 text-primary">Core Skills</h2>
                                         <div className="flex flex-wrap gap-2">
                                             {((docRenderData.content as any).skills || []).map((skill: string, idx: number) => (
-                                                <span key={idx} className="bg-muted text-muted-foreground px-3 py-1 rounded-md text-sm font-medium">
+                                                <span key={skill || `skill-${idx}`} className="bg-muted text-muted-foreground px-3 py-1 rounded-md text-sm font-medium">
                                                     {skill}
                                                 </span>
                                             ))}
@@ -167,7 +167,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                         <h2 className="font-bold text-lg border-b pb-2 mb-4 text-primary">Education</h2>
                                         <div className="space-y-4">
                                             {((docRenderData.content as any).education || []).map((edu: any, idx: number) => (
-                                                <div key={idx}>
+                                                <div key={edu.degree || `edu-${idx}`}>
                                                     <h3 className="font-semibold text-foreground">{edu.degree}</h3>
                                                     <p className="text-sm font-medium text-primary">{edu.institution} ({edu.year})</p>
                                                     {edu.details && <p className="text-xs text-muted-foreground mt-1">{edu.details}</p>}
@@ -183,7 +183,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                         <h2 className="font-bold text-xl border-b pb-2 mb-5 text-primary">Professional Experience</h2>
                                         <div className="space-y-6">
                                             {((docRenderData.content as any).experience || []).map((exp: any, idx: number) => (
-                                                <div key={idx} className="relative pl-4 border-l-2 border-primary/20">
+                                                <div key={exp.company || `exp-${idx}`} className="relative pl-4 border-l-2 border-primary/20">
                                                     <div className="absolute w-2 h-2 bg-primary rounded-full -left-[5px] top-2 shadow-[0_0_8px_hsl(var(--primary))]"></div>
                                                     <h3 className="font-bold text-lg text-foreground">{exp.title}</h3>
                                                     <div className="flex justify-between items-center text-sm mb-3">
@@ -192,7 +192,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                                     </div>
                                                     <ul className="list-disc ml-5 space-y-1 text-sm text-foreground/80 leading-relaxed marker:text-primary">
                                                         {(exp.bullets || []).map((bullet: string, bldx: number) => (
-                                                            <li key={bldx}>{bullet}</li>
+                                                            <li key={`bullet-${bldx}`}>{bullet}</li>
                                                         ))}
                                                     </ul>
                                                 </div>

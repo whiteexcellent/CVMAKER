@@ -159,7 +159,7 @@ export const RippleButton: React.FC<RippleButtonProps> = ({
                         style={{ gridTemplateColumns: `repeat(${GRID_HOVER_NUM_COLS}, 0.25em)` }}
                     >
                         {Array.from({ length: GRID_HOVER_TOTAL_CELLS }, (_, i) => (
-                            <span key={i} className={`${variant}-variant-grid-cell relative flex justify-center items-center pointer-events-auto`} />
+                            <span key={`cell-${i}`} className={`${variant}-variant-grid-cell relative flex justify-center items-center pointer-events-auto`} />
                         ))}
                         <div className={`${variant}-variant-visual-ripple pointer-events-none absolute w-0 h-0 rounded-full transform -translate-x-1/2 -translate-y-1/2 top-0 left-0 z-[-1]`} />
                     </div>

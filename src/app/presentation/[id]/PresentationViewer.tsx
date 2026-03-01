@@ -91,7 +91,7 @@ export default function PresentationViewer({ presentation }: { presentation: any
                 {slides.map((slide: any, idx: number) => {
                     const slideActualIndex = idx + 1;
                     return (
-                        <div key={idx} className={`aspect-video w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col p-12 md:p-16 
+                        <div key={slide.heading || `slide-${idx}`} className={`aspect-video w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col p-12 md:p-16 
                             ${currentSlideIndex === slideActualIndex ? 'flex' : 'hidden print:flex'} print:rounded-none print:shadow-none print:border-none print:bg-white print:text-black print:page-break-after-always print:aspect-auto print:h-screen text-black dark:text-white relative`}
                         >
                             <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 print:hidden" />
@@ -102,7 +102,7 @@ export default function PresentationViewer({ presentation }: { presentation: any
                                     <h3 className="text-xl font-bold mb-6 text-black/50 dark:text-white/50 uppercase tracking-widest">{t('viewer.talkingPoints')}</h3>
                                     <ul className="space-y-4">
                                         {slide.talking_points?.map((point: string, i: number) => (
-                                            <li key={i} className="flex items-start text-lg md:text-xl font-medium leading-relaxed">
+                                            <li key={`point-${i}`} className="flex items-start text-lg md:text-xl font-medium leading-relaxed">
                                                 <span className="w-2 h-2 mt-3 mr-4 rounded-full bg-blue-500 flex-shrink-0" />
                                                 {point}
                                             </li>

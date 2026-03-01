@@ -1,116 +1,313 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, Bot, X, Check, Globe } from 'lucide-react';
+import { Loader2, Send, Bot, X, Globe, Check, AlertCircle } from 'lucide-react';
 import { useTranslation } from '@/components/I18nProvider';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 import { toast } from 'sonner';
-import { useChat, UIMessage } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
-// @ts-ignore
+// @ts-ignore — react-markdown types mismatch ile React 19
 import ReactMarkdown from 'react-markdown';
-// @ts-ignore
+// @ts-ignore — remark-gfm types mismatch ile React 19
 import remarkGfm from 'remark-gfm';
 
-interface AIChatSidebarProps {
-    isOpen: boolean;
-    onClose: () => void;
-    step: number;
-    formData: any;
-    setFormData: (data: any) => void;
+// ─── Tipler ──────────────────────────────────────────────────────────────────
+
+interface SuggestionEvent {
+    type: 'suggestion';
+    field: 'experience' | 'education' | 'skills' | 'targetRole' | 'profileType';
+    value: string;
 }
 
-type Message = {
+interface ChatMessage {
     id: string;
     role: 'user' | 'assistant';
     content: string;
-    fieldSuggestion?: {
-        field: string;
-        value: string;
-    };
-};
+    suggestion?: SuggestionEvent;
+    isError?: boolean;
+}
 
-export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: AIChatSidebarProps) {
+interface CVFormData {
+    profileType?: string;
+    targetRole?: string;
+    education?: string;
+    experience?: string;
+    skills?: string;
+    jobDescription?: string;
+    [key: string]: unknown;
+}
+
+export interface AIChatSidebarProps {
+    isOpen: boolean;
+    onClose: () => void;
+    step: number;
+    formData: Record<string, unknown>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    setFormData: React.Dispatch<React.SetStateAction<any>>;
+}
+
+// ─── JSON öneri satırı ayrıştırıcı ──────────────────────────────────────────
+
+const SUGGESTION_REGEX = /\{"type":"suggestion"[^}]*\}/g;
+
+function parseSuggestion(text: string): SuggestionEvent | null {
+    const matches = text.match(SUGGESTION_REGEX);
+    if (!matches) return null;
+    try {
+        const parsed = JSON.parse(matches[matches.length - 1]) as unknown;
+        if (
+            typeof parsed === 'object' &&
+            parsed !== null &&
+            'type' in parsed &&
+            'field' in parsed &&
+            'value' in parsed &&
+            (parsed as SuggestionEvent).type === 'suggestion'
+        ) {
+            return parsed as SuggestionEvent;
+        }
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+/** Kullanıcıya gösterilen içerikten öneri JSON blokunu kaldırır */
+function stripSuggestionJson(text: string): string {
+    return text.replace(SUGGESTION_REGEX, '').trim();
+}
+
+// ─── Custom hook — kendi stream reader ───────────────────────────────────────
+
+function useAIChat(step: number, formData: CVFormData, locale: string) {
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [isStreaming, setIsStreaming] = useState(false);
+    const abortRef = useRef<AbortController | null>(null);
+
+    const sendMessage = useCallback(
+        async (userText: string) => {
+            if (!userText.trim() || isStreaming) return;
+
+            const userMessage: ChatMessage = {
+                id: crypto.randomUUID(),
+                role: 'user',
+                content: userText,
+            };
+
+            // Geçmiş mesajları API formatına dönüştür (welcome hariç)
+            const apiHistory = messages
+                .filter((m) => !m.isError)
+                .map((m) => ({
+                    role: m.role as 'user' | 'assistant',
+                    content: stripSuggestionJson(m.content),
+                }));
+
+            const assistantId = crypto.randomUUID();
+            const assistantPlaceholder: ChatMessage = {
+                id: assistantId,
+                role: 'assistant',
+                content: '',
+            };
+
+            setMessages((prev) => [...prev, userMessage, assistantPlaceholder]);
+            setIsStreaming(true);
+
+            const controller = new AbortController();
+            abortRef.current = controller;
+
+            try {
+                const response = await fetch('/api/wizard/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        messages: [
+                            ...apiHistory,
+                            { role: 'user', content: userText },
+                        ],
+                        step,
+                        formData,
+                        locale,
+                    }),
+                    signal: controller.signal,
+                });
+
+                if (!response.ok || !response.body) {
+                    let errorCode = 'PROVIDER_ERROR';
+                    try {
+                        const errJson = (await response.json()) as {
+                            error?: { code?: string; message?: string };
+                        };
+                        errorCode = errJson?.error?.code ?? errorCode;
+                    } catch {
+                        // JSON parse başarısız — kod zaten set edildi
+                    }
+                    throw new Error(errorCode);
+                }
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulated = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulated += chunk;
+
+                    setMessages((prev) =>
+                        prev.map((m) =>
+                            m.id === assistantId
+                                ? { ...m, content: accumulated }
+                                : m,
+                        ),
+                    );
+                }
+
+                // Stream bitti — öneri var mı kontrol et
+                const suggestion = parseSuggestion(accumulated);
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantId
+                            ? {
+                                ...m,
+                                content: accumulated,
+                                suggestion: suggestion ?? undefined,
+                            }
+                            : m,
+                    ),
+                );
+            } catch (err: unknown) {
+                if (err instanceof Error && err.name === 'AbortError') {
+                    // Kullanıcı iptal etti — mesajı sil
+                    setMessages((prev) =>
+                        prev.filter((m) => m.id !== assistantId),
+                    );
+                    return;
+                }
+
+                const errorMessage =
+                    err instanceof Error ? err.message : 'UNKNOWN_ERROR';
+                setMessages((prev) =>
+                    prev.map((m) =>
+                        m.id === assistantId
+                            ? {
+                                ...m,
+                                content: errorMessage,
+                                isError: true,
+                            }
+                            : m,
+                    ),
+                );
+            } finally {
+                setIsStreaming(false);
+                abortRef.current = null;
+            }
+        },
+        [isStreaming, messages, step, formData, locale],
+    );
+
+    const cancelStream = useCallback(() => {
+        abortRef.current?.abort();
+    }, []);
+
+    return { messages, setMessages, isStreaming, sendMessage, cancelStream };
+}
+
+// ─── Bileşen ─────────────────────────────────────────────────────────────────
+
+export function AIChatSidebar({
+    isOpen,
+    onClose,
+    step,
+    formData,
+    setFormData,
+}: AIChatSidebarProps) {
     const { t, locale } = useTranslation();
-    const [aiLanguage, setAiLanguage] = useState<string>(locale === 'tr' ? 'Turkish' : 'English');
-    const [input, setInput] = useState('');
+    const [aiLanguage, setAiLanguage] = useState<string>(
+        locale === 'tr' ? 'Turkish' : 'English',
+    );
+    const [inputValue, setInputValue] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const { messages, setMessages, status, sendMessage } = useChat();
+    const { messages, setMessages, isStreaming, sendMessage, cancelStream } =
+        useAIChat(step, formData, aiLanguage);
 
-    // Manually add welcome message on mount if empty
+    // Karşılama mesajı — sadece bir kez
     useEffect(() => {
         if (messages.length === 0) {
             setMessages([
                 {
                     id: 'welcome',
                     role: 'assistant',
-                    content: String(t('wizard.aiWelcome') || 'Hi! I am your AI Assistant. Tell me a bit about yourself and I will help you fill out your CV. What are you studying or what is your current role?')
-                } as any
+                    content: String(
+                        t('wizard.aiWelcome') ||
+                        'Hi! I am your AI Assistant. Tell me about yourself and I will help you write a great CV. What is your current role or what are you studying?',
+                    ),
+                },
             ]);
         }
-    }, [messages.length, setMessages, t]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
-    const isLoading = status === 'submitted' || status === 'streaming';
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInput(e.target.value);
-    };
+    // Otomatik scroll
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, [messages, isStreaming]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (!input.trim() || isLoading) return;
-
-        const messageText = input;
-        setInput('');
-
-        await (sendMessage as any)({ text: messageText }, {
-            headers: { 'Content-Type': 'application/json' },
-            body: { step, formData, locale: aiLanguage }
-        });
+        const text = inputValue.trim();
+        if (!text || isStreaming) return;
+        setInputValue('');
+        await sendMessage(text);
     };
-
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    const scrollToBottom = () => {
-        if (messagesEndRef.current) {
-            messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
-        }
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, isLoading]);
 
     const handleImport = (field: string, value: string) => {
-        setFormData((prev: any) => ({
+        setFormData((prev: Record<string, unknown>) => ({
             ...prev,
-            [field]: prev[field] ? prev[field] + '\n\n' + value : value
+            [field]: prev[field] ? `${String(prev[field])}\n\n${value}` : value,
         }));
         toast.success(t('wizard.importSuccess') || 'Successfully imported to form!', {
-            icon: <Check className="w-4 h-4 text-green-500" />
+            icon: <Check className="h-4 w-4 text-green-500" />,
         });
     };
 
     return (
-        <div className={`w-80 md:w-96 h-[calc(100vh-73px)] border-l border-black/10 dark:border-white/10 bg-slate-50 dark:bg-black/50 flex flex-col fixed right-0 top-[73px] z-40 transition-transform duration-300 transform shadow-2xl ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-            <div className="p-3 border-b border-black/10 dark:border-white/10 flex flex-col gap-3 bg-white dark:bg-black">
+        <div
+            className={`fixed right-0 top-[73px] z-40 flex h-[calc(100vh-73px)] w-80 flex-col border-l border-black/10 bg-slate-50 shadow-2xl transition-transform duration-300 dark:border-white/10 dark:bg-black/50 md:w-96 ${isOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+        >
+            {/* ── Header ── */}
+            <div className="flex flex-col gap-3 border-b border-black/10 bg-white p-3 dark:border-white/10 dark:bg-black">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                        <div className="p-2 bg-black/5 dark:bg-white/10 rounded-full">
-                            <Bot className="w-5 h-5" />
+                        <div className="rounded-full bg-black/5 p-2 dark:bg-white/10">
+                            <Bot className="h-5 w-5" />
                         </div>
-                        <span className="font-bold whitespace-nowrap">{t('wizard.aiAssistant') || 'AI Assistant'}</span>
+                        <span className="whitespace-nowrap font-bold">
+                            {t('wizard.aiAssistant') || 'AI Assistant'}
+                        </span>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={onClose}>
-                        <X className="w-5 h-5" />
+                    <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close AI sidebar">
+                        <X className="h-5 w-5" />
                     </Button>
                 </div>
-                <div className="flex items-center gap-2 text-sm bg-muted/50 p-2 rounded-lg">
-                    <Globe className="w-4 h-4 text-muted-foreground ml-1" />
+
+                {/* Dil seçimi */}
+                <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-2 text-sm">
+                    <Globe className="ml-1 h-4 w-4 text-muted-foreground" />
                     <Select value={aiLanguage} onValueChange={setAiLanguage}>
-                        <SelectTrigger className="h-8 border-none bg-transparent shadow-none focus-visible:ring-0 px-2 py-0">
+                        <SelectTrigger
+                            className="h-8 border-none bg-transparent px-2 py-0 shadow-none focus-visible:ring-0"
+                            aria-label="Select AI response language"
+                        >
                             <SelectValue placeholder="Language" />
                         </SelectTrigger>
                         <SelectContent>
@@ -124,101 +321,110 @@ export function AIChatSidebar({ isOpen, onClose, step, formData, setFormData }: 
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4 scroll-smooth">
+            {/* ── Mesajlar ── */}
+            <div className="flex flex-1 flex-col gap-4 overflow-y-auto scroll-smooth p-4">
                 {messages.map((msg) => {
-                    const msgAny = msg as any;
+                    const displayContent = stripSuggestionJson(msg.content);
+
                     return (
-                        <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                            {msgAny.content && (
-                                <div className={`max-w-[85%] rounded-2xl p-3 mb-2 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-white dark:bg-[#111] border border-black/10 dark:border-white/10 shadow-sm'}`}>
-                                    <div className="text-sm overflow-hidden prose prose-sm dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0 break-words">
+                        <div
+                            key={msg.id}
+                            className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                        >
+                            {/* Mesaj baloncuğu */}
+                            {displayContent && (
+                                <div
+                                    className={`max-w-[85%] rounded-2xl p-3 ${msg.isError
+                                        ? 'flex items-start gap-2 border border-red-200 bg-red-50 text-red-700 dark:border-red-800/50 dark:bg-red-900/10 dark:text-red-400'
+                                        : msg.role === 'user'
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'border border-black/10 bg-white shadow-sm dark:border-white/10 dark:bg-[#111]'
+                                        }`}
+                                >
+                                    {msg.isError && (
+                                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                                    )}
+                                    <div className="prose prose-sm break-words overflow-hidden dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0 text-sm">
                                         <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                            {msgAny.content}
+                                            {displayContent}
                                         </ReactMarkdown>
                                     </div>
                                 </div>
                             )}
 
-                            {msgAny.toolInvocations?.map((toolInvocation: any, index: number) => {
-                                const isSuggestContentTool = toolInvocation.toolName === 'suggest_cv_content';
-                                if (isSuggestContentTool) {
-                                    // @ts-ignore
-                                    if (toolInvocation.state === 'result' || toolInvocation.state === 'call' || 'result' in toolInvocation) {
-                                        const { field, value } = toolInvocation.args as { field: string, value: string };
-                                        if (!field || !value) return null; // Wait until fully streamed
-                                        return (
-                                            <div key={toolInvocation.toolCallId || index} className="mt-2 ml-2 p-3 bg-blue-50/50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800/50 rounded-xl w-[85%] shadow-sm">
-                                                <div className="text-xs font-bold text-blue-600 dark:text-blue-400 mb-1 flex items-center gap-1">
-                                                    {t('wizard.suggestedFor') || 'Suggested for'}: {field}
-                                                </div>
-                                                <div className="text-xs text-muted-foreground mb-3 italic bg-white/50 dark:bg-black/50 p-2 rounded prose prose-sm dark:prose-invert">
-                                                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
-                                                </div>
-                                                <Button
-                                                    size="sm"
-                                                    className="w-full text-xs h-8 bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-600 dark:hover:bg-blue-700 font-semibold"
-                                                    onClick={() => handleImport(field, value)}
-                                                >
-                                                    {t('wizard.importToField') || 'Import to Form'}
-                                                </Button>
-                                            </div>
-                                        );
-                                    } else {
-                                        return (
-                                            <div key={toolInvocation.toolCallId || index} className="mt-2 ml-2 p-2 bg-muted/30 border border-black/5 dark:border-white/5 rounded-xl w-[85%] animate-pulse">
-                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                    <Loader2 className="w-3 h-3 animate-spin" />
-                                                    {t('wizard.aiThinking') || 'AI is thinking...'}
-                                                </div>
-                                            </div>
-                                        );
-                                    }
-                                }
-                                return null;
-                            })}
-
-                            {/* Fallback for the hardcoded welcome message which uses parts */}
-                            {!msgAny.content && msgAny.parts?.map((part: any, index: number) => {
-                                if (part.type === 'text' && part.text) {
-                                    return (
-                                        <div key={index} className={`max-w-[85%] rounded-2xl p-3 mb-2 ${msg.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-white dark:bg-[#111] border border-black/10 dark:border-white/10 shadow-sm'}`}>
-                                            <div className="text-sm overflow-hidden prose prose-sm dark:prose-invert prose-p:my-1 prose-ul:my-1 prose-li:my-0 break-words">
-                                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                                    {part.text}
-                                                </ReactMarkdown>
-                                            </div>
-                                        </div>
-                                    );
-                                }
-                                return null;
-                            })}
+                            {/* Öneri kartı */}
+                            {msg.suggestion && (
+                                <div className="ml-2 mt-2 w-[85%] rounded-xl border border-blue-200 bg-blue-50/50 p-3 shadow-sm dark:border-blue-800/50 dark:bg-blue-900/10">
+                                    <div className="mb-1 flex items-center gap-1 text-xs font-bold text-blue-600 dark:text-blue-400">
+                                        {t('wizard.suggestedFor') || 'Suggested for'}:{' '}
+                                        {msg.suggestion.field}
+                                    </div>
+                                    <div className="prose prose-sm mb-3 rounded bg-white/50 p-2 text-xs italic text-muted-foreground dark:bg-black/50 dark:prose-invert">
+                                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                            {msg.suggestion.value}
+                                        </ReactMarkdown>
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        className="h-8 w-full bg-blue-600 text-xs font-semibold text-white hover:bg-blue-700 dark:bg-blue-600 dark:hover:bg-blue-700"
+                                        onClick={() =>
+                                            handleImport(
+                                                msg.suggestion!.field,
+                                                msg.suggestion!.value,
+                                            )
+                                        }
+                                    >
+                                        {t('wizard.importToField') || 'Import to Form'}
+                                    </Button>
+                                </div>
+                            )}
                         </div>
                     );
                 })}
-                {isLoading && (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground self-start bg-white dark:bg-[#111] border p-3 rounded-2xl shadow-sm">
-                        <Loader2 className="w-4 h-4 animate-spin" />
+
+                {/* Yükleniyor göstergesi */}
+                {isStreaming && (
+                    <div className="flex items-center gap-2 self-start rounded-2xl border bg-white p-3 text-sm text-muted-foreground shadow-sm dark:bg-[#111]">
+                        <Loader2 className="h-4 w-4 animate-spin" />
                         {t('wizard.aiThinking') || 'AI is thinking...'}
                     </div>
                 )}
-                <div ref={messagesEndRef} className="h-1 w-full flex-shrink-0" />
+
+                <div ref={messagesEndRef} className="h-1 w-full shrink-0" />
             </div>
 
-            <div className="p-4 border-t border-black/10 dark:border-white/10 bg-white dark:bg-black">
-                <form
-                    onSubmit={handleSubmit}
-                    className="flex items-center gap-2"
-                >
+            {/* ── Input ── */}
+            <div className="border-t border-black/10 bg-white p-4 dark:border-white/10 dark:bg-black">
+                <form onSubmit={handleSubmit} className="flex items-center gap-2">
                     <Input
-                        value={input}
-                        onChange={handleInputChange}
+                        id="ai-chat-input"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
                         placeholder={t('wizard.chatPlaceholder') || 'Type a message...'}
                         className="flex-1"
-                        disabled={isLoading}
+                        disabled={isStreaming}
+                        aria-label="Chat message input"
                     />
-                    <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
-                        <Send className="w-4 h-4" />
-                    </Button>
+                    {isStreaming ? (
+                        <Button
+                            type="button"
+                            size="icon"
+                            variant="outline"
+                            onClick={cancelStream}
+                            aria-label="Cancel AI response"
+                        >
+                            <X className="h-4 w-4" />
+                        </Button>
+                    ) : (
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={!inputValue.trim()}
+                            aria-label="Send message"
+                        >
+                            <Send className="h-4 w-4" />
+                        </Button>
+                    )}
                 </form>
             </div>
         </div>
