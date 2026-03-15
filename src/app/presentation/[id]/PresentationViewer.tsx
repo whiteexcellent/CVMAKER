@@ -29,31 +29,31 @@ export default function PresentationViewer({ presentation }: { presentation: any
     const presentonUrl = process.env.NEXT_PUBLIC_PRESENTON_URL || 'http://localhost:5000';
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 p-4 md:p-8 font-sans flex flex-col items-center">
+        <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 p-4 pt-24 md:p-8 md:pt-32 font-sans flex flex-col items-center relative">
 
-            {/* INVISIBLE ON PRINT */}
-            <div className="w-full max-w-5xl flex flex-col sm:flex-row items-center justify-between bg-white dark:bg-black p-4 rounded-xl shadow-sm border border-black/10 dark:border-white/10 print:hidden gap-4 mb-8">
-                <Button variant="ghost" asChild className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
-                    <Link href="/dashboard"><ArrowLeft className="w-4 h-4 mr-2" /> {t('common.back')}</Link>
+            {/* FLOATING ACTION BAR FOR HIG MICRO-POLISH */}
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-5xl z-50 flex flex-col sm:flex-row items-center justify-between p-3 rounded-2xl border border-black/10 dark:border-white/10 liquid-glass shadow-lg print:hidden gap-4 transition-all duration-300">
+                <Button variant="ghost" asChild className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 font-bold rounded-xl h-12 px-6">
+                    <Link href="/dashboard"><ArrowLeft className="w-5 h-5 mr-2" /> {t('common.back')}</Link>
                 </Button>
 
                 <div className="flex items-center gap-4 text-black font-bold dark:text-white">
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         onClick={() => setCurrentSlideIndex(Math.max(0, currentSlideIndex - 1))}
                         disabled={currentSlideIndex === 0}
-                        className="rounded-full"
+                        className="rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                     >
                         <ChevronLeft className="w-5 h-5" />
                     </Button>
-                    <span>{currentSlideIndex + 1} / {totalSlides}</span>
+                    <span className="font-display tracking-widest">{currentSlideIndex + 1} / {totalSlides}</span>
                     <Button
-                        variant="outline"
+                        variant="ghost"
                         size="icon"
                         onClick={() => setCurrentSlideIndex(Math.min(totalSlides - 1, currentSlideIndex + 1))}
                         disabled={currentSlideIndex === totalSlides - 1}
-                        className="rounded-full"
+                        className="rounded-full hover:bg-black/5 dark:hover:bg-white/10"
                     >
                         <ChevronRight className="w-5 h-5" />
                     </Button>
@@ -61,14 +61,14 @@ export default function PresentationViewer({ presentation }: { presentation: any
 
                 <div className="flex gap-2 w-full sm:w-auto">
                     {presentation.pptx_path && (
-                        <Button asChild variant="outline" className="w-full sm:w-auto font-bold h-10 border-black/20 dark:border-white/20">
+                        <Button asChild variant="outline" className="w-full sm:w-auto font-bold h-12 px-6 rounded-xl border-black/20 dark:border-white/20 hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300">
                             <a href={`${presentonUrl}${presentation.pptx_path}`} target="_blank" rel="noopener noreferrer">
-                                <Download className="w-4 h-4 mr-2" /> PPTX
+                                <Download className="w-5 h-5 mr-2" /> PPTX
                             </a>
                         </Button>
                     )}
-                    <Button onClick={handlePrint} className="w-full sm:w-auto bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10">
-                        <Printer className="w-4 h-4 mr-2" /> {t('common.exportPdf')}
+                    <Button onClick={handlePrint} className="w-full sm:w-auto bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12 px-8 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5">
+                        <Printer className="w-5 h-5 mr-2" /> {t('common.exportPdf')}
                     </Button>
                 </div>
             </div>
@@ -79,7 +79,7 @@ export default function PresentationViewer({ presentation }: { presentation: any
                 <div className={`aspect-video w-full bg-slate-900 border-4 border-slate-800 rounded-3xl shadow-2xl flex flex-col justify-center p-12 md:p-24 
                     ${currentSlideIndex === 0 ? 'flex' : 'hidden print:flex'} print:rounded-none print:shadow-none print:border-none print:bg-white print:text-black print:page-break-after-always print:aspect-auto print:h-screen text-white relative overflow-hidden`}
                 >
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 print:hidden" />
+                    <div className="absolute top-0 left-0 w-full h-2 bg-black dark:bg-white print:hidden opacity-10" />
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-6">{parsedContent.title || t('viewer.pitchDeck')}</h1>
                     <h2 className="text-2xl md:text-3xl text-slate-400 font-light">{parsedContent.subtitle || presentation.target_company}</h2>
                     <div className="mt-auto pt-16 border-t border-slate-800 print:border-black/20">
@@ -94,7 +94,7 @@ export default function PresentationViewer({ presentation }: { presentation: any
                         <div key={slide.heading || `slide-${idx}`} className={`aspect-video w-full bg-white dark:bg-zinc-900 border border-black/10 dark:border-white/10 rounded-3xl shadow-2xl flex flex-col p-12 md:p-16 
                             ${currentSlideIndex === slideActualIndex ? 'flex' : 'hidden print:flex'} print:rounded-none print:shadow-none print:border-none print:bg-white print:text-black print:page-break-after-always print:aspect-auto print:h-screen text-black dark:text-white relative`}
                         >
-                            <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 print:hidden" />
+                            <div className="absolute top-0 left-0 w-full h-2 bg-black dark:bg-white print:hidden opacity-10" />
                             <h2 className="text-4xl md:text-5xl font-black tracking-tight mb-12 border-b-2 border-black/10 dark:border-white/10 pb-6">{slide.heading}</h2>
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 h-full">
@@ -124,7 +124,7 @@ export default function PresentationViewer({ presentation }: { presentation: any
                 <div className={`aspect-video w-full bg-slate-900 border-4 border-slate-800 rounded-3xl shadow-2xl flex flex-col justify-center items-center text-center p-12 md:p-24 
                     ${currentSlideIndex === totalSlides - 1 ? 'flex' : 'hidden print:flex'} print:rounded-none print:shadow-none print:border-none print:bg-white print:text-black print:aspect-auto print:h-screen text-white relative`}
                 >
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 print:hidden" />
+                    <div className="absolute top-0 left-0 w-full h-2 bg-black dark:bg-white print:hidden opacity-10" />
                     <h2 className="text-4xl md:text-6xl font-black mb-8">{t('viewer.conclusion')}</h2>
                     <p className="text-2xl md:text-3xl font-light text-slate-300 max-w-3xl leading-relaxed print:text-black/80">
                         "{parsedContent.conclusion || 'Thank you for your time. I look forward to contributing to your team.'}"

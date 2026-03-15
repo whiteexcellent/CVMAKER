@@ -127,12 +127,12 @@ export default function CVPreviewClient({
     };
 
     return (
-        <div className="min-h-screen bg-slate-100 dark:bg-zinc-950 p-4 md:p-8 font-sans">
+        <div className="min-h-screen bg-slate-50 dark:bg-zinc-950 p-4 pt-24 md:p-8 md:pt-32 font-sans relative">
 
             {/* Control Panel (Invisible on Print) */}
-            <div className="w-full max-w-[210mm] mx-auto flex flex-col sm:flex-row items-center justify-between bg-white dark:bg-black p-4 rounded-xl shadow-sm border border-black/10 dark:border-white/10 print:hidden gap-4 mb-8">
-                <Button variant="ghost" asChild className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/5 font-semibold">
-                    <Link href="/dashboard"><ArrowLeft className="w-4 h-4 mr-2" /> Back</Link>
+            <div className="fixed top-4 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[210mm] z-50 flex flex-col sm:flex-row items-center justify-between p-3 rounded-2xl border border-black/10 dark:border-white/10 liquid-glass shadow-lg print:hidden gap-4 transition-all duration-300">
+                <Button variant="ghost" asChild className="text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 font-bold rounded-xl h-12 px-6">
+                    <Link href="/dashboard"><ArrowLeft className="w-5 h-5 mr-2" /> Back</Link>
                 </Button>
 
                 <div className="flex flex-wrap items-center justify-end gap-2 w-full sm:w-auto">

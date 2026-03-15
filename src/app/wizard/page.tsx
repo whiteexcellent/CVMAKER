@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -196,7 +197,7 @@ export default function WizardPage() {
             </div>
         ) :
             <div className="flex min-h-screen flex-col bg-white dark:bg-black text-black dark:text-white font-sans selection:bg-black/10 dark:selection:bg-white/20 transition-colors duration-300">
-                <header className="border-b border-black/10 dark:border-white/10 px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-white dark:bg-black">
+                <header className="border-b border-black/5 dark:border-white/5 px-6 py-4 flex items-center justify-between sticky top-0 z-50 bg-white/50 dark:bg-black/50 backdrop-blur-xl">
                     <div className="flex items-center gap-2">
                         <Link href="/" className="font-bold text-lg tracking-tight hover:opacity-80 transition-opacity">
                             OMNICV
@@ -212,7 +213,7 @@ export default function WizardPage() {
                             variant={isAISidebarOpen ? 'default' : 'outline'}
                             size="sm"
                             onClick={() => setIsAISidebarOpen((prev) => !prev)}
-                            className="flex items-center gap-2 h-9 px-4 font-bold rounded-none"
+                            className="flex items-center gap-2 h-10 px-4 font-bold rounded-xl"
                             aria-label="Toggle AI Assistant"
                         >
                             <Bot className="h-4 w-4" />
@@ -221,12 +222,12 @@ export default function WizardPage() {
                     </div>
                 </header>
 
-                <Progress value={progressPercentage} className="h-1 w-full rounded-none bg-slate-100 dark:bg-white/10 [&>div]:bg-black dark:[&>div]:bg-white" />
+                <Progress value={progressPercentage} className="h-1.5 w-full rounded-none bg-black/5 dark:bg-white/5 [&>div]:bg-black dark:[&>div]:bg-white transition-all duration-300" />
 
                 <div className="flex flex-1 relative">
                     <main className="flex-1 flex flex-col items-center py-12 px-4">
                         <div className="w-full max-w-3xl relative z-10 transition-all duration-300">
-                            <Card className="w-full bg-white dark:bg-black border-black/10 dark:border-white/10 shadow-sm rounded-none">
+                            <Card className="w-full liquid-glass border-none shadow-2xl rounded-3xl overflow-hidden">
 
                                 {step === 1 && (
                                     <WizardStep1 
@@ -255,12 +256,12 @@ export default function WizardPage() {
                                     <WizardStep4 formData={formData} setFormData={setFormData} />
                                 )}
 
-                                <div className="flex items-center justify-between p-6 border-t border-black/10 dark:border-white/10 bg-slate-50 dark:bg-black">
+                                <div className="flex items-center justify-between p-6 border-t border-black/5 dark:border-white/5 bg-transparent">
                                     <Button
                                         variant="outline"
                                         onClick={handlePrev}
                                         disabled={step === 1}
-                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 h-11 px-6 rounded-none font-bold"
+                                        className="bg-transparent border-black/10 dark:border-white/10 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 h-12 px-6 rounded-xl font-bold"
                                     >
                                         <ArrowLeft className="w-4 h-4 mr-2" /> {t('common.back')}
                                     </Button>
@@ -273,7 +274,7 @@ export default function WizardPage() {
                                                 (step === 2 && !formData.education.trim()) ||
                                                 (step === 3 && !formData.experience.trim())
                                             }
-                                            className="bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/90 font-bold h-11 px-8 rounded-none transition-all disabled:opacity-50"
+                                            className="bg-black dark:bg-white text-white dark:text-black hover:bg-black/80 dark:hover:bg-white/90 font-bold h-12 px-8 rounded-xl transition-all disabled:opacity-50"
                                         >
                                             {t('wizard.continue')} <ArrowRight className="w-4 h-4 ml-2" />
                                         </Button>
@@ -281,7 +282,7 @@ export default function WizardPage() {
                                         <Button
                                             onClick={handleSubmit}
                                             disabled={isGenerating || !formData.skills.trim()}
-                                            className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-11 px-8 rounded-none transition-all border-0 disabled:opacity-50"
+                                            className="w-full sm:w-auto rounded-xl h-12 px-8 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold transition-all border-0 disabled:opacity-50"
                                         >
                                             {isGenerating ? (
                                                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t('wizard.compiling')}</>

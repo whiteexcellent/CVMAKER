@@ -97,8 +97,8 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
     return (
         <div className="space-y-6">
             {!isPro && (
-                <div className="bg-black dark:bg-white dark:text-black text-white rounded-xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-lg mb-8 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-5 mix-blend-overlay pointer-events-none"></div>
+                <div className="bg-black dark:bg-white dark:text-black text-white rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between shadow-2xl mb-8 relative overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none mix-blend-overlay"></div>
                     <div className="relative z-10">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 dark:border-black/20 bg-white/10 dark:bg-black/10 text-xs font-bold uppercase tracking-widest mb-4 backdrop-blur-md">
                             <Sparkles className="w-3.5 h-3.5" /> OMNICV PRO
@@ -119,36 +119,36 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
             )}
 
             <Tabs defaultValue="create" className="space-y-6">
-                <TabsList className="bg-slate-100 dark:bg-white/5 border border-black/10 dark:border-white/10 p-1 rounded-xl flex flex-wrap h-auto gap-2">
-                    <TabsTrigger value="create" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                <TabsList className="bg-slate-100/50 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/5 p-1.5 rounded-2xl flex flex-wrap h-auto gap-2">
+                    <TabsTrigger value="create" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <FileText className="w-4 h-4 mr-2" />
                         {t('dashboard.builder')}
                     </TabsTrigger>
-                    <TabsTrigger value="history" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="history" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <FileText className="w-4 h-4 mr-2" />
                         {t('dashboard.history')}
                     </TabsTrigger>
-                    <TabsTrigger value="cover-letters" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="cover-letters" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <MessageSquareText className="w-4 h-4 mr-2" />
                         {t('dashboard.coverLetters')}
                     </TabsTrigger>
-                    <TabsTrigger value="presentations" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="presentations" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <MonitorPlay className="w-4 h-4 mr-2" />
                         {t('dashboard.presentations')}
                     </TabsTrigger>
-                    <TabsTrigger value="linkedin" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="linkedin" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <Linkedin className="w-4 h-4 mr-2" />
                         {t('dashboard.linkedin')}
                     </TabsTrigger>
-                    <TabsTrigger value="jobs" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="jobs" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <Briefcase className="w-4 h-4 mr-2" />
                         {t('dashboard.findJobs')}
                     </TabsTrigger>
-                    <TabsTrigger value="companies" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="companies" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <Building2 className="w-4 h-4 mr-2" />
                         {t('dashboard.findCompanies')}
                     </TabsTrigger>
-                    <TabsTrigger value="analytics" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60">
+                    <TabsTrigger value="analytics" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
                         <Search className="w-4 h-4 mr-2" />
                         {t('dashboard.analytics')}
                     </TabsTrigger>
@@ -162,7 +162,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
 
                 {/* CREATE FROM SCRATCH TAB */}
                 <TabsContent value="create">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
+                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
                         <CardHeader>
                             <CardTitle className="text-2xl font-black tracking-tight">{t('dashboard.startFromScratch')}</CardTitle>
                             <CardDescription className="text-black/50 dark:text-white/50 font-light">
@@ -171,15 +171,15 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="p-6 rounded-2xl bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 flex flex-col items-center justify-center text-center space-y-4 hover:border-black/30 dark:hover:border-white/30 transition-colors">
-                                    <div className="p-4 bg-black/5 dark:bg-white/10 rounded-full">
+                                <div className="p-8 rounded-3xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5 flex flex-col items-center justify-center text-center space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
+                                    <div className="p-5 bg-black/5 dark:bg-white/10 rounded-full">
                                         <FileText className="w-8 h-8 text-black dark:text-white" />
                                     </div>
                                     <div>
                                         <h3 className="font-bold text-lg">{t('dashboard.aiWizard')}</h3>
                                         <p className="text-sm text-black/50 dark:text-white/50 mt-2 font-light">{t('dashboard.aiWizardDesc')}</p>
                                     </div>
-                                    <Button className="w-full bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold" asChild>
+                                    <Button className="w-full rounded-xl h-12 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold" asChild>
                                         <Link href="/wizard">{t('dashboard.startWizard')}</Link>
                                     </Button>
                                 </div>
@@ -202,7 +202,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
 
                 {/* LINKEDIN IMPORT TAB */}
                 <TabsContent value="linkedin">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
+                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
                         <CardHeader>
                             <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
                                 <Linkedin className="w-5 h-5" /> {t('dashboard.linkedinTitle')}
@@ -220,10 +220,10 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                         placeholder={t('dashboard.linkedinPlaceholder')}
                                         value={linkedinUrl}
                                         onChange={(e) => setLinkedinUrl(e.target.value)}
-                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-12"
+                                        className="bg-white/50 dark:bg-black/50 backdrop-blur-sm border-black/10 dark:border-white/10 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-14 rounded-xl shadow-sm focus-visible:ring-black dark:focus-visible:ring-white transition-all duration-300"
                                     />
                                 </div>
-                                <Button type="submit" disabled={isLinkedinImporting} className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black h-11 w-full md:w-auto font-bold">
+                                <Button type="submit" disabled={isLinkedinImporting} className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black h-14 rounded-xl w-full md:w-auto font-bold px-8">
                                     {isLinkedinImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Linkedin className="w-4 h-4 mr-2" />}
                                     {t('dashboard.importConvert')}
                                 </Button>
@@ -243,7 +243,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                 </TabsContent>
                 {/* ANALYTICS TAB */}
                 <TabsContent value="analytics">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-sm">
+                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
                         <CardHeader>
                             <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
                                 <Search className="w-5 h-5" /> {t('dashboard.analytics')}
@@ -255,7 +255,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {[...localResumes, ...localCoverLetters, ...localPresentations].filter(doc => doc.share_enabled).length === 0 ? (
-                                    <div className="col-span-full py-16 text-center border-2 border-dashed border-black/10 dark:border-white/10 rounded-xl bg-black/5 dark:bg-white/5">
+                                    <div className="col-span-full py-16 text-center border border-black/5 dark:border-white/5 rounded-3xl bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-md liquid-glass">
                                         <div className="mx-auto w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-4">
                                             <FileText className="w-6 h-6 text-black/50 dark:text-white/50" />
                                         </div>
@@ -275,7 +275,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                             else typeLabel = t('dashboard.coverLetterType');
 
                                             return (
-                                                <div key={doc.id} className="p-5 flex flex-col justify-between rounded-xl bg-slate-50 dark:bg-zinc-900 border border-black/10 dark:border-white/10 hover:border-black/30 dark:hover:border-white/30 transition-all">
+                                                <div key={doc.id} className="p-6 flex flex-col justify-between rounded-2xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
                                                     <div>
                                                         <div className="flex justify-between items-start mb-2">
                                                             <div>
@@ -296,7 +296,7 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                                             </div>
                                                         </div>
                                                     </div>
-                                                    <Button asChild className="w-full bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-10">
+                                                    <Button asChild className="w-full rounded-xl bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12">
                                                         <Link href={`/share/${doc.share_id}`} target="_blank">{t('dashboard.viewPublicLink')}</Link>
                                                     </Button>
                                                 </div>

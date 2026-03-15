@@ -110,10 +110,10 @@ export default function PricingPage() {
                     {pricingPlans.map((plan) => (
                         <div
                             key={plan.planName}
-                            className={`relative flex flex-col p-8 bg-white dark:bg-black border ${plan.isPopular ? 'border-black dark:border-white shadow-xl scale-100 md:scale-105 z-10' : 'border-black/20 dark:border-white/20 hover:border-black/40 dark:hover:border-white/40'}`}
+                            className={`relative flex flex-col p-10 rounded-3xl transition-all duration-500 liquid-glass border ${plan.isPopular ? 'border-primary border-2 shadow-xl scale-100 md:scale-[1.02] z-10 hover:-translate-y-1 bg-white/40 dark:bg-black/40' : 'border-black/10 dark:border-white/10 shadow-sm hover:shadow-lg hover:-translate-y-1 bg-white/50 dark:bg-black/40'}`}
                         >
                             {plan.isPopular && (
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 text-xs font-black uppercase tracking-wider bg-black dark:bg-white text-white dark:text-black z-20 whitespace-nowrap">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1.5 text-xs font-black uppercase tracking-wider bg-primary text-primary-foreground rounded-full shadow-sm z-20 whitespace-nowrap">
                                     {t('pricing.mostPopular')}
                                 </div>
                             )}
@@ -147,9 +147,9 @@ export default function PricingPage() {
                             <Button
                                 onClick={() => handleCheckout(plan.packageId)}
                                 disabled={loadingPlan === plan.packageId || (isPro && plan.packageId === 'pro_yearly')}
-                                className={`w-full h-12 font-bold px-8 rounded-none transition-all ${plan.buttonVariant === 'default'
-                                    ? 'bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black border-0'
-                                    : 'bg-transparent border-2 border-black dark:border-white text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10'
+                                className={`w-full h-14 font-bold px-8 rounded-xl transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] ${plan.buttonVariant === 'default'
+                                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground border-0'
+                                    : 'bg-transparent border-2 border-primary/20 hover:border-primary/40 text-foreground hover:bg-accent'
                                     }`}
                             >
                                 {isPro && plan.packageId === 'pro_yearly' ? t('common.active') || 'Current Plan' : loadingPlan === plan.packageId ? (

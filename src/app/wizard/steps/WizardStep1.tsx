@@ -36,7 +36,7 @@ export function WizardStep1({
             </CardHeader>
             <CardContent className="space-y-8 px-8 pb-8">
                 {/* LinkedIn Pro Feature */}
-                <div className="p-6 bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 transition-all hover:border-black/30 dark:hover:border-white/30">
+                <div className="p-6 relative rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 liquid-glass transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                     <div className="flex items-start gap-4">
                         <div className="p-2.5 bg-black/5 dark:bg-white/10 rounded-full text-black dark:text-white">
                             <Linkedin className="h-6 w-6" />
@@ -52,7 +52,7 @@ export function WizardStep1({
                             <div className="flex flex-col sm:flex-row gap-2">
                                 <Input
                                     placeholder="https://linkedin.com/in/username"
-                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 focus-visible:ring-black dark:focus-visible:ring-white"
+                                    className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-12 rounded-xl focus-visible:ring-[3px] focus-visible:ring-black/20 dark:focus-visible:ring-white/20 transition-all duration-300 focus:shadow-md"
                                     value={linkedinUrl}
                                     onChange={(e) => setLinkedinUrl(e.target.value)}
                                     disabled={isImporting}
@@ -60,7 +60,7 @@ export function WizardStep1({
                                 <Button
                                     onClick={handleLinkedInImport}
                                     disabled={isImporting || !linkedinUrl.trim()}
-                                    className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-11 sm:w-32 border-0"
+                                    className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12 rounded-xl sm:w-32 border-0 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                                 >
                                     {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : t('wizard.runAgent')}
                                 </Button>
@@ -82,7 +82,7 @@ export function WizardStep1({
                     <div className="space-y-3">
                         <Label htmlFor="profileType" className="text-black/80 dark:text-white/80 font-bold">{t('wizard.iAmA')}</Label>
                         <Select onValueChange={(val) => setFormData({ ...formData, profileType: val })} defaultValue={formData.profileType}>
-                            <SelectTrigger id="profileType" className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white focus:ring-black dark:focus:ring-white h-11">
+                            <SelectTrigger id="profileType" className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white h-12 rounded-xl focus:ring-[3px] focus:ring-black/20 dark:focus:ring-white/20 transition-all duration-300 focus:shadow-md">
                                 <SelectValue placeholder={t('wizard.selectStatus')} />
                             </SelectTrigger>
                             <SelectContent className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white">
@@ -98,12 +98,12 @@ export function WizardStep1({
                             placeholder={t('wizard.targetRolePlaceholder')}
                             value={formData.targetRole}
                             onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-                            className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 focus-visible:ring-black dark:focus-visible:ring-white"
+                            className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-12 rounded-xl focus-visible:ring-[3px] focus-visible:ring-black/20 dark:focus-visible:ring-white/20 transition-all duration-300 focus:shadow-md"
                         />
                     </div>
 
                     {/* Tailored CV Feature */}
-                    <div className="mt-8 p-6 bg-slate-50 dark:bg-white/5 border border-black/10 dark:border-white/10 transition-all hover:border-black/30 dark:hover:border-white/30">
+                    <div className="mt-8 p-6 relative rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 liquid-glass transition-all duration-300 hover:shadow-xl hover:-translate-y-1">
                         <div className="flex items-start gap-4">
                             <div className="p-2.5 bg-black/5 dark:bg-white/10 rounded-full text-black dark:text-white">
                                 <Bot className="h-6 w-6" />
@@ -120,7 +120,7 @@ export function WizardStep1({
                                 <div className="flex flex-col sm:flex-row gap-2 mb-6">
                                     <Input
                                         placeholder="https://www.indeed.com/viewjob?jk=..."
-                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-11 focus-visible:ring-black dark:focus-visible:ring-white"
+                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-12 rounded-xl focus-visible:ring-[3px] focus-visible:ring-black/20 dark:focus-visible:ring-white/20 transition-all duration-300 focus:shadow-md"
                                         value={jobUrl}
                                         onChange={(e) => setJobUrl(e.target.value)}
                                         disabled={isScrapingJob}
@@ -128,7 +128,7 @@ export function WizardStep1({
                                     <Button
                                         onClick={handleScraping}
                                         disabled={isScrapingJob || !jobUrl.trim()}
-                                        className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-11 sm:w-32 border-0"
+                                        className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12 rounded-xl sm:w-32 border-0 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
                                     >
                                         {isScrapingJob ? <Loader2 className="h-4 w-4 animate-spin" /> : t('wizard.optimize')}
                                     </Button>
@@ -138,7 +138,7 @@ export function WizardStep1({
                                     <Label className="text-black/80 dark:text-white/80 font-bold text-xs uppercase tracking-wider">{t('wizard.orPasteManual')}</Label>
                                     <Textarea
                                         placeholder={t('wizard.jobDescPlaceholder')}
-                                        className="min-h-[150px] bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus-visible:ring-black dark:focus-visible:ring-white text-sm leading-relaxed p-4"
+                                        className="min-h-[150px] bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 rounded-xl focus-visible:ring-[3px] focus-visible:ring-black/20 dark:focus-visible:ring-white/20 transition-all duration-300 focus:shadow-md text-sm leading-relaxed p-4"
                                         value={formData.jobDescription}
                                         onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
                                     />

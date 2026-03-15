@@ -25,9 +25,8 @@ function SuccessPageContent() {
     return (
         <div className="min-h-screen bg-white dark:bg-black text-black dark:text-white font-sans selection:bg-black/10 dark:selection:bg-white/20 transition-colors duration-300 flex flex-col relative overflow-hidden">
 
-            {/* BACKGROUND GLOWS (Subtle & Premium) */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-blue-100/40 dark:bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-            <div className="absolute top-[40%] left-[60%] -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-purple-100/40 dark:bg-purple-600/10 rounded-full blur-[80px] pointer-events-none" />
+            {/* BACKGROUND ELEMENTS (Monochrome & Premium) */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-black/5 dark:bg-white/5 rounded-full blur-[100px] pointer-events-none" />
 
             {/* HEADER NAV (Same as Landing) */}
             <header className="absolute top-0 w-full z-50 px-6 py-6 flex justify-between items-center max-w-7xl mx-auto left-0 right-0">
@@ -49,8 +48,10 @@ function SuccessPageContent() {
                     transition={{ type: "spring", stiffness: 200, damping: 20, delay: 0.1 }}
                     className="relative mb-10 inline-flex"
                 >
-                    <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-500/30 blur-2xl rounded-full" />
-                    <CheckCircle2 className="w-24 h-24 sm:w-32 sm:h-32 text-blue-600 dark:text-blue-500 relative z-10 drop-shadow-md" />
+                    <div className="absolute inset-0 bg-black/5 dark:bg-white/10 blur-2xl rounded-full" />
+                    <div className="relative z-10 w-24 h-24 sm:w-32 sm:h-32 rounded-full flex items-center justify-center liquid-glass">
+                        <CheckCircle2 className="w-12 h-12 sm:w-16 sm:h-16 text-black dark:text-white" />
+                    </div>
                 </motion.div>
 
                 <motion.div

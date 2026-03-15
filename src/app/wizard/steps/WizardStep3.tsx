@@ -21,7 +21,7 @@ export function WizardStep3({ formData, setFormData }: WizardStep3Props) {
                     <Textarea
                         id="experience"
                         placeholder={t('wizard.experiencePlaceholder')}
-                        className="min-h-[300px] bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus-visible:ring-black dark:focus-visible:ring-white text-base leading-relaxed p-4"
+                        className="min-h-[300px] bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 rounded-xl focus-visible:ring-[3px] focus-visible:ring-black/20 dark:focus-visible:ring-white/20 transition-all duration-300 focus:shadow-md text-base leading-relaxed p-4"
                         value={formData.experience}
                         onChange={(e) => setFormData({ ...formData, experience: e.target.value })}
                     />

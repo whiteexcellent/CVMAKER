@@ -28,8 +28,8 @@ export default function SignupPage() {
 
             <div className="flex-1 flex items-center justify-center p-6 mt-16">
                 <div className="w-full max-w-md">
-                    <Card className="bg-white dark:bg-black border-black/10 dark:border-white/10 text-black dark:text-white shadow-none rounded-none">
-                        <CardHeader className="space-y-2 text-center pt-8">
+                    <Card className="bg-white/40 dark:bg-black/40 border border-black/10 dark:border-white/10 text-black dark:text-white shadow-2xl rounded-3xl liquid-glass overflow-hidden">
+                        <CardHeader className="space-y-2 text-center pt-10">
                             <CardTitle className="text-4xl font-display font-black tracking-tight">{t('auth.createAccount')}</CardTitle>
                             <CardDescription className="text-black/60 dark:text-white/60 text-sm mt-2 font-medium">
                                 {t('auth.signupDesc')}
@@ -45,12 +45,12 @@ export default function SignupPage() {
                                         type="email"
                                         placeholder={t('auth.emailPlaceholder')}
                                         required
-                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 focus-visible:ring-black dark:focus-visible:ring-white h-12 rounded-none"
+                                        className="bg-transparent border-black/20 dark:border-white/20 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-14 rounded-xl text-base"
                                     />
                                 </div>
 
                                 <div className="flex flex-col gap-4 mt-2">
-                                    <Button formAction={signUpWithMagicLink} className="w-full h-12 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold rounded-none border-0 transition-all">
+                                    <Button formAction={signUpWithMagicLink} className="w-full h-14 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold rounded-xl border-0 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]">
                                         <Mail className="w-4 h-4 mr-2" /> {t('auth.continueWithEmail')}
                                     </Button>
 
@@ -65,11 +65,11 @@ export default function SignupPage() {
                                             <span className="w-full border-t border-black/10 dark:border-white/10"></span>
                                         </div>
                                         <div className="relative flex justify-center text-xs uppercase font-bold tracking-widest">
-                                            <span className="bg-white dark:bg-black px-4 text-black/40 dark:text-white/40">{t('auth.alreadyHaveAccount')}</span>
+                                            <span className="bg-transparent px-4 text-black/40 dark:text-white/40">{t('auth.alreadyHaveAccount')}</span>
                                         </div>
                                     </div>
 
-                                    <Button asChild variant="outline" className="w-full h-12 bg-transparent border-2 border-black dark:border-white text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all font-bold rounded-none">
+                                    <Button asChild variant="outline" className="w-full h-14 bg-transparent border-2 border-black/20 dark:border-white/20 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98]">
                                         <Link href="/login">{t('auth.logInInstead')}</Link>
                                     </Button>
                                 </div>

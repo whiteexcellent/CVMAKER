@@ -119,7 +119,7 @@ export function CompanySearchTab() {
                         </div>
                         <div className="w-full h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
                             <div
-                                className="h-full bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full transition-all duration-300 ease-out"
+                                className="h-full bg-black dark:bg-white rounded-full transition-all duration-300 ease-out"
                                 style={{ width: `${compProgress}%` }}
                             />
                         </div>
