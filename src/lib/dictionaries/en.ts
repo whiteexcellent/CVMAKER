@@ -126,9 +126,9 @@ export const en = {
         cvPreview: 'CV Preview:'
     },
     error: {
-        title: 'Wait, something went wrong.',
+        title: 'Authentication Error',
         defaultMessage: 'Please try checking your credentials and try again.',
-        backToLogin: '← Go back to login'
+        backToLogin: '\u2190 Go back to login'
     },
     generate: {
         coverLetterTitle: 'Generate Cover Letter',

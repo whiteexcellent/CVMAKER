@@ -126,9 +126,9 @@ export const tr = {
         cvPreview: 'CV Önizleme:'
     },
     error: {
-        title: 'Bir şeyler ters gitti.',
+        title: 'Kimlik Doğrulama Hatası',
         defaultMessage: 'Lütfen bilgilerinizi kontrol edip tekrar deneyin.',
-        backToLogin: '← Giriş sayfasına dön'
+        backToLogin: '\u2190 Giriş sayfasına dön'
     },
     generate: {
         coverLetterTitle: 'Motive Mektubu Oluştur',
