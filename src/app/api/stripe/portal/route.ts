@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
         if (customers.data.length === 0) {
             // No customer found, they probably haven't subscribed yet
-            return NextResponse.json({ error: 'No Stripe customer found for this email', redirect: true }, { status: 404 });
+            return NextResponse.json({ url: null, redirect: '/pricing' });
         }
 
         const { origin } = new URL(req.url);

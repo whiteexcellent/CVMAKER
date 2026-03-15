@@ -35,9 +35,12 @@ export default function SettingsClient({
             // Check if there is a portal endpoint. If not, fallback to pricing.
             const res = await fetch('/api/stripe/portal', { method: 'POST' });
             if (res.ok) {
-                const { url } = await res.json();
-                if (url) {
-                    window.location.href = url;
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                    return;
+                } else if (data.redirect) {
+                    router.push(data.redirect);
                     return;
                 }
             }
