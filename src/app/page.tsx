@@ -45,8 +45,8 @@ export default function Home() {
           </div>
         </div>
         <div className="flex items-center gap-4 mr-2 lg:mr-8">
-          <Link href="/login" className="hidden md:inline-flex text-sm font-semibold text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors mr-2">
-            Login
+          <Link href={authHref === '/wizard' ? '/dashboard' : '/login'} className="hidden md:inline-flex text-sm font-semibold text-black/60 dark:text-white/60 hover:text-black dark:hover:text-white transition-colors mr-2">
+            {authHref === '/wizard' ? t('landing.dashboard') : 'Login'}
           </Link>
           <LanguageToggle />
           <ThemeToggle />
