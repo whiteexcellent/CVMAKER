@@ -31,9 +31,26 @@ export async function updateSession(request: NextRequest) {
     // supabase.auth.getUser(). A simple mistake could make it very hard to debug
     // issues with users being randomly logged out.
 
-    const {
-        data: { user },
-    } = await supabase.auth.getUser()
+    let user = null;
+
+    // Fast-fail if environment variables are missing (prevents hanging on mock urls)
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('mock.supabase')) {
+        console.warn('Middleware Warning: Missing or invalid NEXT_PUBLIC_SUPABASE_URL. Skipping auth check to prevent 504.');
+    } else {
+        try {
+            // Prevent Vercel MIDDLEWARE_INVOCATION_TIMEOUT (Edge 5s limit) by capping auth check to 2.5s
+            const fetchUserPromise = supabase.auth.getUser();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Supabase Auth check timed out')), 2500)
+            );
+            
+            const response = await Promise.race([fetchUserPromise, timeoutPromise]) as any;
+            user = response?.data?.user || null;
+        } catch (error) {
+            console.error('Middleware Auth Error:', error);
+            // If it times out or errors, we proceed as unauthenticated rather than returning a 504 Gateway Timeout
+        }
+    }
 
     // Bypassing auth check for local sandbox browser testing as requested
     // TODO(PRODUCTION): Remove or gate behind a feature flag before deploying to production.
