@@ -18,6 +18,7 @@ function LoginContent() {
     const searchParams = useSearchParams();
     const message = searchParams.get('message');
     const error = searchParams.get('error');
+    const next = searchParams.get('redirect') || searchParams.get('next') || '/dashboard';
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-white dark:bg-black text-black dark:text-white font-sans selection:bg-black/10 dark:selection:bg-white/20 transition-colors duration-300">
@@ -52,6 +53,7 @@ function LoginContent() {
                                 </div>
                             )}
                             <form className="grid gap-6">
+                                <input type="hidden" name="next" value={next} />
                                 <div className="grid gap-3">
                                     <Label htmlFor="email" className="text-black/80 dark:text-white/80 font-bold">{t('auth.emailLabel')}</Label>
                                     <Input
@@ -79,7 +81,7 @@ function LoginContent() {
                                     </div>
 
                                     <Button asChild variant="outline" className="w-full h-14 bg-transparent border-2 border-black/20 dark:border-white/20 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98]">
-                                        <Link href="/signup">{t('auth.createFreeAccount')}</Link>
+                                        <Link href={`/signup?next=${encodeURIComponent(next)}`}>{t('auth.createFreeAccount')}</Link>
                                     </Button>
                                 </div>
                             </form>

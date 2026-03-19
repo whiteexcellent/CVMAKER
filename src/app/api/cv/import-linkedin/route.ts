@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
-import { checkAndDeductCredit } from '@/lib/credits';
-import { supabaseAdmin } from '@/lib/supabase/admin';
+import { checkAndDeductCredit, refundCredit } from '@/lib/credits';
+import { linkedinImportRequestSchema, linkedinImportResponseSchema } from '@/lib/schemas';
+import { parseJsonBody, RequestGuardError, getRateLimitIdentifier } from '@/lib/request-guards';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
-
-const schema = z.object({
-    linkedinUrl: z.string().url()
-});
 
 export async function POST(req: Request) {
     try {
@@ -20,12 +17,21 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) {
-            return NextResponse.json({ error: 'Invalid payload: Must be a valid LinkedIn URL' }, { status: 400 });
+        try {
+            await enforceRateLimit(supabase, {
+                identifier: getRateLimitIdentifier(req, user.id),
+                routeKey: 'linkedin_import',
+                maxRequests: 6,
+                windowSeconds: 3600,
+            });
+        } catch (rateLimitError: any) {
+            return NextResponse.json({ error: rateLimitError.message }, { status: 429 });
         }
-        const { linkedinUrl } = parsed.data;
+
+        const { linkedinUrl } = await parseJsonBody(req, linkedinImportRequestSchema, {
+            maxBytes: 4_000,
+            invalidPayloadMessage: 'Invalid payload: Must be a valid LinkedIn URL',
+        });
 
         if (!linkedinUrl.includes('linkedin.com/in/')) {
             return NextResponse.json({ error: 'Please provide a valid LinkedIn profile URL (e.g., https://www.linkedin.com/in/username/)' }, { status: 400 });
@@ -33,30 +39,23 @@ export async function POST(req: Request) {
 
         const { data: profile } = await supabase.from('profiles').select('subscription_tier').eq('id', user.id).single();
         const isPro = profile?.subscription_tier === 'pro';
-        const isDev = process.env.NODE_ENV === 'development';
 
-        if (!isPro && !isDev) {
+        if (!isPro) {
             return NextResponse.json({ error: 'LinkedIn Import is a Pro feature. Please upgrade to Pro Yearly to unlock this tool.' }, { status: 403 });
         }
 
-        // 1. Check User Credits Securely
-        const creditCheck = await checkAndDeductCredit(user.id, 1);
+        const creditCheck = await checkAndDeductCredit(user.id, 1, 'linkedin_import');
         if (!creditCheck.allowed) {
             return NextResponse.json({ error: creditCheck.reason }, { status: 402 });
         }
 
-        // 2. Initialize Apify Client
         if (!process.env.APIFY_API_TOKEN) {
             console.error('APIFY_API_TOKEN is not set in environment variables');
+            await refundCredit(user.id, 1, 'linkedin_import_refund');
             return NextResponse.json({ error: 'LinkedIn import service is currently unavailable.' }, { status: 503 });
         }
 
-        // 3. Call Apify Actor (dev_fusion/linkedin-profile-scraper)
-
-
-        // Using native fetch to bypass Turbopack dynamic module resolution error
-        const apifyUrl = `https://api.apify.com/v2/acts/dev_fusion~linkedin-profile-scraper/run-sync-get-dataset-items`;
-
+        const apifyUrl = 'https://api.apify.com/v2/acts/dev_fusion~linkedin-profile-scraper/run-sync-get-dataset-items';
         const runRes = await fetch(apifyUrl, {
             method: 'POST',
             headers: {
@@ -64,78 +63,66 @@ export async function POST(req: Request) {
                 'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
             },
             body: JSON.stringify({
-                "profileUrls": [linkedinUrl]
-            })
+                profileUrls: [linkedinUrl]
+            }),
+            signal: AbortSignal.timeout(30_000),
         });
 
         if (!runRes.ok) {
-            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
+            await refundCredit(user.id, 1, 'linkedin_import_refund');
             const errorText = await runRes.text();
-            console.error("Apify API Error:", errorText);
+            console.error('Apify API Error:', errorText);
             throw new Error(`Apify returned ${runRes.status}`);
         }
 
         const items = await runRes.json();
-
-        // 4. Fetch the results
         if (!items || items.length === 0) {
-            await supabaseAdmin.rpc('add_credits', { user_id_param: user.id, amount_param: 1 });
-            console.error('Apify returned no data for:', linkedinUrl);
+            await refundCredit(user.id, 1, 'linkedin_import_refund');
             return NextResponse.json({ error: 'Could not extract data from this LinkedIn profile. Please ensure it is a public profile.' }, { status: 404 });
         }
 
         const profileDataRaw = items[0] as any;
 
-        // 5. Format the data for our Wizard (Defensive extraction for dev_fusion)
-        // Extracting experiences
-        let experienceFormatted = '';
         const rawExperience = profileDataRaw.experience || profileDataRaw.experiences || [];
-        if (Array.isArray(rawExperience)) {
-            experienceFormatted = rawExperience.map((exp: any) => {
+        const experienceFormatted = Array.isArray(rawExperience)
+            ? rawExperience.map((exp: any) => {
                 const title = exp.title || exp.position || exp.role || 'Role';
                 const company = exp.company || exp.companyName || 'Company';
                 const duration = exp.dateRange || exp.duration || exp.period || 'Dates';
                 const desc = exp.description || exp.summary || '';
                 return `${title} at ${company} (${duration}).\n${desc}`;
-            }).join('\n\n');
-        }
+            }).join('\n\n').trim()
+            : '';
 
-        // Extracting education
-        let educationFormatted = '';
         const rawEdu = profileDataRaw.education || profileDataRaw.educations || [];
-        if (Array.isArray(rawEdu)) {
-            educationFormatted = rawEdu.map((edu: any) => {
+        const educationFormatted = Array.isArray(rawEdu)
+            ? rawEdu.map((edu: any) => {
                 const degree = edu.degree || edu.degreeName || 'Degree';
                 const school = edu.school || edu.schoolName || edu.institution || 'School';
                 const duration = edu.dateRange || edu.duration || edu.period || 'Dates';
                 return `${degree} at ${school} (${duration})`;
-            }).join('\n\n');
-        }
+            }).join('\n\n').trim()
+            : '';
 
-        // Extracting skills
-        let skillsFormatted = profileDataRaw.skills || '';
+        let skillsFormatted = '';
         if (Array.isArray(profileDataRaw.skills)) {
-            skillsFormatted = profileDataRaw.skills.map((s: any) => typeof s === 'string' ? s : s.name || s.title || JSON.stringify(s)).join(', ');
+            skillsFormatted = profileDataRaw.skills
+                .map((skill: any) => typeof skill === 'string' ? skill : skill.name || skill.title || '')
+                .filter(Boolean)
+                .join(', ');
         } else if (typeof profileDataRaw.skills === 'string') {
             skillsFormatted = profileDataRaw.skills;
         }
 
-        // Extracting summary
-        const summaryFormatted = profileDataRaw.about || profileDataRaw.summary || profileDataRaw.description || '';
-
-        const fullName = profileDataRaw.fullName || `${profileDataRaw.firstName || ''} ${profileDataRaw.lastName || ''}`.trim();
-        const headline = profileDataRaw.headline || profileDataRaw.position || '';
-
-        const formattedResult = {
-            experience: experienceFormatted.trim(),
-            education: educationFormatted.trim(),
+        const structuredResult = linkedinImportResponseSchema.parse({
+            experience: experienceFormatted,
+            education: educationFormatted,
             skills: skillsFormatted,
-            summary: summaryFormatted,
-            fullName: fullName,
-            targetRole: headline
-        };
+            summary: profileDataRaw.about || profileDataRaw.summary || profileDataRaw.description || '',
+            fullName: profileDataRaw.fullName || `${profileDataRaw.firstName || ''} ${profileDataRaw.lastName || ''}`.trim(),
+            targetRole: profileDataRaw.headline || profileDataRaw.position || '',
+        });
 
-        // 7. Save scraped data to database
         const { error: insertError } = await supabase
             .from('scraped_profiles')
             .insert({
@@ -148,11 +135,17 @@ export async function POST(req: Request) {
             console.error('Error saving scraped profile to db (non-fatal):', insertError);
         }
 
-        // 8. (Deduction transaction handled atomically by deduct_credits RPC)
-
-        return NextResponse.json(formattedResult);
+        return NextResponse.json({
+            ...structuredResult,
+            trackRecord: structuredResult.experience,
+            capabilities: structuredResult.skills,
+        });
 
     } catch (err: any) {
+        if (err instanceof RequestGuardError) {
+            return NextResponse.json(err.payload, { status: err.status });
+        }
+
         console.error('LinkedIn Import Error:', err);
         return NextResponse.json({ error: err.message || 'An unexpected error occurred during import.' }, { status: 500 });
     }

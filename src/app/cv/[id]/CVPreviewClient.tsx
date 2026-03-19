@@ -78,10 +78,11 @@ export default function CVPreviewClient({
         const saveToast = toast.loading('Saving changes...');
 
         try {
+            const { pdfUrl, ...contentWithoutPdfUrl } = cvData;
             const res = await fetch(`/api/cv/${resumeId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content: cvData })
+                body: JSON.stringify({ content: contentWithoutPdfUrl })
             });
 
             if (!res.ok) {

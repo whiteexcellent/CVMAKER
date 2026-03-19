@@ -68,7 +68,7 @@ export function getUserPrompt(education: string = '', experience: string = '', s
        - Education/Background: ${education}
        - Experience/Projects: ${experience}
        - Skills: ${skills}
-       ${jobDescription ? ` \n\nCRITICAL CONTEXT: The user is applying for a specific job. Here is the job description:\n\${jobDescription}\n\nYou MUST heavily optimize the CV content (especially the personalSummary and experience bullets) to match the required skills, keywords, and tone of this job description. If a required skill from the job description can be reasonably inferred from the user's raw input, emphasize it.` : ''}
+       ${jobDescription ? ` \n\nCRITICAL CONTEXT: The user is applying for a specific job. Here is the job description:\n${jobDescription}\n\nYou MUST heavily optimize the CV content (especially the personalSummary and experience bullets) to match the required skills, keywords, and tone of this job description. If a required skill from the job description can be reasonably inferred from the user's raw input, emphasize it.` : ''}
 
        Process this data and construct a professional CV following the strict JSON schema.
     `;

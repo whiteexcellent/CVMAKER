@@ -1,88 +1,78 @@
-import { notFound } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Lock, FileText, CheckCircle2 } from 'lucide-react';
+import { notFound } from 'next/navigation';
+import { CheckCircle2, FileText, Lock } from 'lucide-react';
+
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { normalizeCoverLetterContent } from '@/lib/cover-letter';
+import { createSignedPdfUrl } from '@/lib/pdf';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ViewTracker from './ViewTracker';
 import PDFExportButton from '../../cv/[id]/PDFExportButton';
 
-// Sanitize HTML to prevent XSS on public-facing pages
-function sanitizeHtml(html: string): string {
-    if (!html) return '';
-    return html
-        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        .replace(/on\w+="[^"]*"/gi, '')
-        .replace(/on\w+='[^']*'/gi, '')
-        .replace(/javascript:/gi, '')
-        .replace(/data:/gi, 'blocked:');
-}
+type SharedDocument = {
+    id: string;
+    title?: string | null;
+    content: any;
+    share_expires_at?: string | null;
+    pdf_path?: string | null;
+    pdf_url?: string | null;
+    company_name?: string | null;
+    target_company?: string | null;
+    created_at?: string | null;
+};
 
-// Shared Viewer Page (Public)
 export default async function SharedDocumentPage({ params }: { params: Promise<{ shareId: string }> }) {
-    const resolvedParams = await params;
-    const shareId = resolvedParams.shareId;
+    const { shareId } = await params;
+    const supabaseAdmin = getSupabaseAdminClient();
 
-    // Must use Admin Client to read shared documents, since public viewers are entirely unauthenticated (anon)
-    const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
-
-    let docRenderData: any = null;
+    let docRenderData: SharedDocument | null = null;
     let docType: 'resume' | 'cover_letter' | 'presentation' | null = null;
-    let isExpired = false;
 
-    // 1. Try Resumes
     const { data: resumeDoc } = await supabaseAdmin
         .from('resumes')
-        .select('*')
+        .select('id, title, content, share_expires_at, pdf_path, pdf_url, created_at')
         .eq('share_id', shareId)
         .eq('share_enabled', true)
         .single();
 
     if (resumeDoc) {
         docType = 'resume';
-        docRenderData = resumeDoc;
-        const expiryDate = new Date(resumeDoc.share_expires_at);
-        if (new Date() > expiryDate) isExpired = true;
+        docRenderData = resumeDoc as SharedDocument;
     } else {
-        // 2. Try Cover Letters
         const { data: coverDoc } = await supabaseAdmin
             .from('cover_letters')
-            .select('*')
+            .select('id, title, content, share_expires_at, company_name, created_at')
             .eq('share_id', shareId)
             .eq('share_enabled', true)
             .single();
 
         if (coverDoc) {
             docType = 'cover_letter';
-            docRenderData = coverDoc;
-            const expiryDate = new Date(coverDoc.share_expires_at);
-            if (new Date() > expiryDate) isExpired = true;
+            docRenderData = coverDoc as SharedDocument;
         } else {
-            // 3. Try Presentations
             const { data: presDoc } = await supabaseAdmin
                 .from('presentations')
-                .select('*')
+                .select('id, title, target_company, content, share_expires_at, created_at')
                 .eq('share_id', shareId)
                 .eq('share_enabled', true)
                 .single();
 
             if (presDoc) {
                 docType = 'presentation';
-                docRenderData = presDoc;
-                const expiryDate = new Date(presDoc.share_expires_at);
-                if (new Date() > expiryDate) isExpired = true;
+                docRenderData = presDoc as SharedDocument;
             }
         }
     }
 
-    if (!docRenderData) {
+    if (!docRenderData || !docType) {
         notFound();
     }
 
-    // -- BLOCKED VIEW: EXPIRED / PAYWALL --
+    const isExpired = docRenderData.share_expires_at
+        ? new Date() > new Date(docRenderData.share_expires_at)
+        : true;
+
     if (isExpired) {
         return (
             <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
@@ -93,7 +83,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                         </div>
                         <CardTitle className="text-2xl">Link Expired</CardTitle>
                         <CardDescription className="text-base">
-                            The 7-day free sharing period for this document has ended.
+                            The 7-day sharing period for this document has ended.
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6 pt-2">
@@ -103,7 +93,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                 Owner Access Required
                             </h4>
                             <p className="text-sm text-muted-foreground leading-relaxed">
-                                If you are the owner of this {docType === 'resume' ? 'CV' : docType === 'presentation' ? 'Presentation' : 'Motivation Letter'}, you must upgrade your account to Premium to unlock permanent web links and advanced analytics.
+                                If you are the owner of this {docType === 'resume' ? 'CV' : docType === 'presentation' ? 'presentation' : 'cover letter'}, you must upgrade your account to unlock permanent links and analytics.
                             </p>
                         </div>
                         <Button className="w-full text-md font-semibold h-12" asChild>
@@ -120,11 +110,26 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
         );
     }
 
-    // -- OPEN VIEW: ACTIVE DOCUMENT --
-    // Render either the structured CV JSON or the Cover Letter HTML
+    const signedPdfUrl = docType === 'resume'
+        ? await createSignedPdfUrl(docRenderData.pdf_path || docRenderData.pdf_url, 600)
+        : null;
+
+    const resumeContent = docType === 'resume' ? docRenderData.content : null;
+    const coverLetterContent = docType === 'cover_letter' ? normalizeCoverLetterContent(docRenderData.content) : null;
+    const presentationContent = docType === 'presentation'
+        ? (() => {
+            try {
+                return typeof docRenderData.content === 'string'
+                    ? JSON.parse(docRenderData.content)
+                    : docRenderData.content;
+            } catch {
+                return {};
+            }
+        })()
+        : null;
+
     return (
         <div className="min-h-screen bg-muted/20 pb-24">
-            {/* View Analytics Tracker (Silent) */}
             <ViewTracker shareId={shareId} />
 
             <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-medium flex items-center justify-center gap-2">
@@ -135,28 +140,31 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
             <main className="max-w-4xl mx-auto mt-8 p-4">
                 {docType === 'resume' && (
                     <div className="flex justify-end mb-4">
-                        <PDFExportButton pdfUrl={docRenderData.pdf_url} userFullName={(docRenderData.content as any).targetRole || docRenderData.title || 'Professional Resume'} />
+                        <PDFExportButton
+                            pdfUrl={signedPdfUrl}
+                            userFullName={(resumeContent as any)?.targetRole || docRenderData.title || 'Professional Resume'}
+                        />
                     </div>
                 )}
+
                 <Card className="w-full bg-background shadow-xl rounded-xl overflow-hidden border-muted">
-                    {docType === 'resume' ? (
+                    {docType === 'resume' && resumeContent && (
                         <div className="p-10 space-y-8">
                             <div className="border-b pb-6 text-center">
                                 <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-foreground">
-                                    {(docRenderData.content as any).targetRole || docRenderData.title || 'Professional Resume'}
+                                    {(resumeContent as any).targetRole || docRenderData.title || 'Professional Resume'}
                                 </h1>
                                 <p className="text-muted-foreground text-lg italic max-w-2xl mx-auto">
-                                    {(docRenderData.content as any).personalSummary}
+                                    {(resumeContent as any).personalSummary}
                                 </p>
                             </div>
 
                             <div className="grid md:grid-cols-3 gap-8">
-                                {/* Sidebar (Skills/Education) */}
                                 <div className="space-y-8 md:col-span-1 border-r pr-6 border-muted">
                                     <section>
                                         <h2 className="font-bold text-lg border-b pb-2 mb-4 text-primary">Core Skills</h2>
                                         <div className="flex flex-wrap gap-2">
-                                            {((docRenderData.content as any).skills || []).map((skill: string, idx: number) => (
+                                            {((resumeContent as any).skills || []).map((skill: string, idx: number) => (
                                                 <span key={skill || `skill-${idx}`} className="bg-muted text-muted-foreground px-3 py-1 rounded-md text-sm font-medium">
                                                     {skill}
                                                 </span>
@@ -166,7 +174,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                     <section>
                                         <h2 className="font-bold text-lg border-b pb-2 mb-4 text-primary">Education</h2>
                                         <div className="space-y-4">
-                                            {((docRenderData.content as any).education || []).map((edu: any, idx: number) => (
+                                            {((resumeContent as any).education || []).map((edu: any, idx: number) => (
                                                 <div key={edu.degree || `edu-${idx}`}>
                                                     <h3 className="font-semibold text-foreground">{edu.degree}</h3>
                                                     <p className="text-sm font-medium text-primary">{edu.institution} ({edu.year})</p>
@@ -177,12 +185,11 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                     </section>
                                 </div>
 
-                                {/* Main Body (Experience/Projects) */}
                                 <div className="space-y-8 md:col-span-2">
                                     <section>
                                         <h2 className="font-bold text-xl border-b pb-2 mb-5 text-primary">Professional Experience</h2>
                                         <div className="space-y-6">
-                                            {((docRenderData.content as any).experience || []).map((exp: any, idx: number) => (
+                                            {((resumeContent as any).experience || []).map((exp: any, idx: number) => (
                                                 <div key={exp.company || `exp-${idx}`} className="relative pl-4 border-l-2 border-primary/20">
                                                     <div className="absolute w-2 h-2 bg-primary rounded-full -left-[5px] top-2 shadow-[0_0_8px_hsl(var(--primary))]"></div>
                                                     <h3 className="font-bold text-lg text-foreground">{exp.title}</h3>
@@ -191,8 +198,8 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                                         <span className="text-muted-foreground px-2 py-0.5 bg-muted rounded">{exp.duration}</span>
                                                     </div>
                                                     <ul className="list-disc ml-5 space-y-1 text-sm text-foreground/80 leading-relaxed marker:text-primary">
-                                                        {(exp.bullets || []).map((bullet: string, bldx: number) => (
-                                                            <li key={`bullet-${bldx}`}>{bullet}</li>
+                                                        {(exp.bullets || []).map((bullet: string, bulletIndex: number) => (
+                                                            <li key={`bullet-${bulletIndex}`}>{bullet}</li>
                                                         ))}
                                                     </ul>
                                                 </div>
@@ -202,16 +209,57 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                                 </div>
                             </div>
                         </div>
-                    ) : (
-                        // Render Cover Letter HTML safely
-                        <div className="p-12">
-                            <h1 className="text-3xl font-bold border-b pb-6 mb-8 text-foreground">
-                                {docRenderData.title || `To: ${(docRenderData.company_name) || 'Hiring Manager'}`}
+                    )}
+
+                    {docType === 'cover_letter' && coverLetterContent && (
+                        <div className="p-12 space-y-8">
+                            <h1 className="text-3xl font-bold border-b pb-6 text-foreground">
+                                {docRenderData.title || `To: ${docRenderData.company_name || 'Hiring Manager'}`}
                             </h1>
-                            <div
-                                className="prose prose-sm sm:prose-base dark:prose-invert max-w-none text-foreground leading-loose"
-                                dangerouslySetInnerHTML={{ __html: sanitizeHtml(docRenderData.content) }}
-                            />
+                            <div className="space-y-4">
+                                {coverLetterContent.subject && (
+                                    <p className="font-semibold text-foreground">{coverLetterContent.subject}</p>
+                                )}
+                                {coverLetterContent.paragraphs.map((paragraph, index) => (
+                                    <p key={`paragraph-${index}`} className="text-foreground/90 leading-loose">
+                                        {paragraph}
+                                    </p>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {docType === 'presentation' && presentationContent && (
+                        <div className="p-10 space-y-8">
+                            <div className="border-b pb-6">
+                                <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-foreground">
+                                    {presentationContent.title || docRenderData.title || 'Presentation'}
+                                </h1>
+                                <p className="text-muted-foreground text-lg">
+                                    {presentationContent.subtitle || docRenderData.target_company}
+                                </p>
+                            </div>
+                            <div className="space-y-6">
+                                {(presentationContent.slides || []).map((slide: any, index: number) => (
+                                    <section key={slide.heading || `slide-${index}`} className="rounded-xl border border-muted p-6 space-y-4">
+                                        <h2 className="text-2xl font-bold text-foreground">{slide.heading}</h2>
+                                        <ul className="list-disc ml-5 space-y-2 text-foreground/90">
+                                            {(slide.talking_points || []).map((point: string, pointIndex: number) => (
+                                                <li key={`point-${pointIndex}`}>{point}</li>
+                                            ))}
+                                        </ul>
+                                        {slide.why_im_a_fit && (
+                                            <p className="text-sm italic text-muted-foreground">{slide.why_im_a_fit}</p>
+                                        )}
+                                    </section>
+                                ))}
+                                {presentationContent.conclusion && (
+                                    <section className="rounded-xl border border-muted p-6">
+                                        <h2 className="text-xl font-bold mb-2">Conclusion</h2>
+                                        <p className="text-foreground/90">{presentationContent.conclusion}</p>
+                                    </section>
+                                )}
+                            </div>
                         </div>
                     )}
                 </Card>

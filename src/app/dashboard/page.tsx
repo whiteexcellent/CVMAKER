@@ -12,12 +12,33 @@ export default async function DashboardPage() {
         redirect('/login')
     }
 
-    // Fetch the user's profile to display credits
-    const { data: profile } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', data.user.id)
-        .single()
+    const [profileResult, resumesResult, coverLettersResult, presentationsResult] = await Promise.all([
+        supabase
+            .from('profiles')
+            .select('id, total_credits, daily_credits, last_credit_reset, subscription_tier')
+            .eq('id', data.user.id)
+            .single(),
+        supabase
+            .from('resumes')
+            .select('id, title, created_at, share_enabled, share_id, share_expires_at, views')
+            .eq('user_id', data.user.id)
+            .order('created_at', { ascending: false })
+            .limit(50),
+        supabase
+            .from('cover_letters')
+            .select('id, title, created_at, share_enabled, share_id, share_expires_at, views, company_name')
+            .eq('user_id', data.user.id)
+            .order('created_at', { ascending: false })
+            .limit(50),
+        supabase
+            .from('presentations')
+            .select('id, title, created_at, share_enabled, share_id, share_expires_at, views, target_company')
+            .eq('user_id', data.user.id)
+            .order('created_at', { ascending: false })
+            .limit(50),
+    ]);
+
+    const profile = profileResult.data;
 
     // Calculate Display Credits (Considering UTC Daily Resets)
     let displayCredits = profile?.total_credits || 0
@@ -39,26 +60,9 @@ export default async function DashboardPage() {
         }
     }
 
-    // Fetch the user's generated CVs
-    const { data: resumes } = await supabase
-        .from('resumes')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .order('created_at', { ascending: false })
-
-    // Fetch the user's generated Cover Letters
-    const { data: coverLetters } = await supabase
-        .from('cover_letters')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .order('created_at', { ascending: false })
-
-    // Fetch the user's generated Presentations
-    const { data: presentations } = await supabase
-        .from('presentations')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .order('created_at', { ascending: false })
+    const resumes = (resumesResult.data || []).map((resume) => ({ ...resume, documentType: 'resume' }));
+    const coverLetters = (coverLettersResult.data || []).map((coverLetter) => ({ ...coverLetter, documentType: 'cover_letter' }));
+    const presentations = (presentationsResult.data || []).map((presentation) => ({ ...presentation, documentType: 'presentation' }));
 
     return (
         <div className="flex min-h-screen flex-col bg-white dark:bg-black text-black dark:text-white">

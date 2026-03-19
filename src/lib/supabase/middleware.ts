@@ -1,5 +1,6 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getRequiredEnv, isDevAuthBypassEnabled } from '@/lib/env'
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
@@ -7,8 +8,8 @@ export async function updateSession(request: NextRequest) {
     })
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co',
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock_anon_key',
+        getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+        getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
         {
             cookies: {
                 getAll() {
@@ -33,29 +34,19 @@ export async function updateSession(request: NextRequest) {
 
     let user = null;
 
-    // Fast-fail if environment variables are missing (prevents hanging on mock urls)
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL.includes('mock.supabase')) {
-        console.warn('Middleware Warning: Missing or invalid NEXT_PUBLIC_SUPABASE_URL. Skipping auth check to prevent 504.');
-    } else {
-        try {
-            // Prevent Vercel MIDDLEWARE_INVOCATION_TIMEOUT (Edge 5s limit) by capping auth check to 2.5s
-            const fetchUserPromise = supabase.auth.getUser();
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Supabase Auth check timed out')), 2500)
-            );
-            
-            const response = await Promise.race([fetchUserPromise, timeoutPromise]) as any;
-            user = response?.data?.user || null;
-        } catch (error) {
-            console.error('Middleware Auth Error:', error);
-            // If it times out or errors, we proceed as unauthenticated rather than returning a 504 Gateway Timeout
-        }
+    try {
+        const fetchUserPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Supabase Auth check timed out')), 2500)
+        );
+
+        const response = await Promise.race([fetchUserPromise, timeoutPromise]) as any;
+        user = response?.data?.user || null;
+    } catch (error) {
+        console.error('Middleware Auth Error:', error);
     }
 
-    // Bypassing auth check for local sandbox browser testing as requested
-    // TODO(PRODUCTION): Remove or gate behind a feature flag before deploying to production.
-    // WARNING: This bypasses ALL authentication checks in development mode.
-    const isLocalSandbox = process.env.NODE_ENV === 'development';
+    const isLocalSandbox = isDevAuthBypassEnabled();
 
     // Protect dashboard and sensitive routes
     if (
@@ -65,8 +56,7 @@ export async function updateSession(request: NextRequest) {
             request.nextUrl.pathname.startsWith('/wizard') ||
             request.nextUrl.pathname.startsWith('/cv') ||
             request.nextUrl.pathname.startsWith('/cover-letter') ||
-            request.nextUrl.pathname.startsWith('/presentation') ||
-            request.nextUrl.pathname.startsWith('/pricing'))
+            request.nextUrl.pathname.startsWith('/presentation'))
     ) {
         // no user, potentially respond by redirecting the user to the login page
         const url = request.nextUrl.clone()

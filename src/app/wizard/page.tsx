@@ -22,6 +22,7 @@ import { WizardStep1 } from './steps/WizardStep1';
 import { WizardStep2 } from './steps/WizardStep2';
 import { WizardStep3 } from './steps/WizardStep3';
 import { WizardStep4 } from './steps/WizardStep4';
+import { isDevAuthBypassEnabled } from '@/lib/env';
 
 export default function WizardPage() {
     const router = useRouter();
@@ -55,8 +56,31 @@ export default function WizardPage() {
 
     // Auth guard — temporarily bypassed for browser subagent testing
     useEffect(() => {
-        setIsAuthChecking(false);
-    }, []);
+        let isMounted = true;
+
+        if (isDevAuthBypassEnabled()) {
+            setIsAuthChecking(false);
+            return;
+        }
+
+        const supabase = createBrowserClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        supabase.auth.getUser().then(({ data: { user } }) => {
+            if (!isMounted) return;
+            if (!user) {
+                router.replace('/login?next=/wizard');
+                return;
+            }
+            setIsAuthChecking(false);
+        });
+
+        return () => {
+            isMounted = false;
+        };
+    }, [router]);
 
     const [formData, setFormData] = useState({
         profileType: '',
@@ -67,7 +91,25 @@ export default function WizardPage() {
         jobDescription: ''
     });
 
-    // States are now part of the central state object
+    useEffect(() => {
+        const rawPrefill = localStorage.getItem('scrapedCvData');
+        if (!rawPrefill) return;
+
+        try {
+            const parsed = JSON.parse(rawPrefill);
+            setFormData((prev) => ({
+                ...prev,
+                targetRole: parsed.targetRole || prev.targetRole,
+                education: parsed.education || prev.education,
+                experience: parsed.experience || parsed.trackRecord || prev.experience,
+                skills: parsed.skills || parsed.capabilities || prev.skills,
+            }));
+        } catch (error) {
+            console.error('Failed to load wizard prefill:', error);
+        } finally {
+            localStorage.removeItem('scrapedCvData');
+        }
+    }, []);
 
     const handleLinkedInImport = async () => {
         if (!linkedinUrl || !linkedinUrl.includes('linkedin.com/in/')) {
@@ -96,15 +138,15 @@ export default function WizardPage() {
             // Map imported data to our form schema
             setFormData(prev => ({
                 ...prev,
-                targetRole: data.targetRole || '',
-                education: data.education || '',
-                experience: data.trackRecord || '', // Changed from experience to trackRecord in instruction
-                skills: data.capabilities || '' // Changed from skills to capabilities in instruction
+                targetRole: data.targetRole || prev.targetRole,
+                education: data.education || prev.education,
+                experience: data.experience || data.trackRecord || prev.experience,
+                skills: data.skills || data.capabilities || prev.skills
             }));
 
             toast.success(t('toast.importSuccess'), { id: importToast });
-            setLinkedinUrl(''); // Added this line back as it was in original but removed in instruction diff
-            setStep(2); // Move to next step on success
+            setLinkedinUrl('');
+            setStep(2);
         } catch (error: any) {
             console.error('LinkedIn import failed:', error);
             toast.error(error.message || t('toast.importFailed'), { id: importToast });
@@ -119,7 +161,7 @@ export default function WizardPage() {
             return;
         }
 
-        setIsScrapingJob(true); // Changed from setIsScraping to setIsScrapingJob
+        setIsScrapingJob(true);
         const scrapeToast = toast.loading(t('toast.scrapingJob'), {
             duration: 20000
         });
@@ -128,7 +170,7 @@ export default function WizardPage() {
             const response = await fetch('/api/cv/scrape-job', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url: jobUrl }) // Changed from jobUrl to url: jobUrl
+                body: JSON.stringify({ jobUrl })
             });
 
             const data = await response.json();
@@ -137,19 +179,24 @@ export default function WizardPage() {
                 throw new Error(data.error || t('toast.scrapeFailed'));
             }
 
-            setFormData(prev => ({ // Changed from setJobRequirements to setFormData
+            setFormData(prev => ({
                 ...prev,
-                targetRole: data.jobTitle || prev.targetRole, // Added this line back as it was in original but removed in instruction diff
-                jobDescription: data.jobDescription || ''
+                targetRole: data.title || data.jobTitle || prev.targetRole,
+                jobDescription: data.description || data.jobDescription || ''
             }));
 
-            toast.success(t('toast.scrapeSuccess').replace('{company}', data.companyName).replace('{role}', data.jobTitle), { id: scrapeToast });
-            setJobUrl(''); // Added this line back as it was in original but removed in instruction diff
+            toast.success(
+                t('toast.scrapeSuccess')
+                    .replace('{company}', data.company || data.companyName || '')
+                    .replace('{role}', data.title || data.jobTitle || ''),
+                { id: scrapeToast }
+            );
+            setJobUrl('');
         } catch (error: any) {
             console.error('Job scraping failed:', error);
             toast.error(error.message || t('toast.scrapeFailed'), { id: scrapeToast });
         } finally {
-            setIsScrapingJob(false); // Changed from setIsScraping to setIsScrapingJob
+            setIsScrapingJob(false);
         }
     };
 

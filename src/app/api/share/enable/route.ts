@@ -1,6 +1,9 @@
-import { NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
 import crypto from 'crypto';
+import { NextResponse } from 'next/server';
+
+import { createClient } from '@/lib/supabase/server';
+import { parseJsonBody, RequestGuardError } from '@/lib/request-guards';
+import { shareEnableRequestSchema } from '@/lib/schemas';
 
 export async function POST(req: Request) {
     try {
@@ -11,17 +14,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { documentId, type } = await req.json();
-
-        if (!documentId || !type || !['resume', 'cover_letter', 'presentation'].includes(type)) {
-            return NextResponse.json({ error: 'Valid documentId and type (resume/cover_letter/presentation) are required.' }, { status: 400 });
-        }
+        const { documentId, type } = await parseJsonBody(req, shareEnableRequestSchema, {
+            maxBytes: 2_000,
+        });
 
         let tableName = 'resumes';
         if (type === 'cover_letter') tableName = 'cover_letters';
         else if (type === 'presentation') tableName = 'presentations';
 
-        // Ensure user actually owns the document before sharing
         const { data: doc, error: fetchError } = await supabase
             .from(tableName)
             .select('user_id, share_id')
@@ -32,10 +32,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Document not found or unauthorized.' }, { status: 404 });
         }
 
-        // Generate a clean 10-character unique share ID if it doesn't exist, else reuse existing active ID
-        const shareId = doc.share_id || crypto.randomBytes(5).toString('hex');
-
-        // Calculate the Date 7 Days from exactly now
+        const shareId = doc.share_id || crypto.randomBytes(16).toString('hex');
         const expiresAt = new Date();
         expiresAt.setDate(expiresAt.getDate() + 7);
 
@@ -49,22 +46,23 @@ export async function POST(req: Request) {
             .eq('id', documentId);
 
         if (updateError) {
-            console.error("Failed to enable sharing:", updateError);
+            console.error('Failed to enable sharing:', updateError);
             return NextResponse.json({ error: 'Failed to update database' }, { status: 500 });
         }
 
-        // Return the domain link
         const { origin } = new URL(req.url);
-        const shareUrl = `${origin}/share/${shareId}`;
-
         return NextResponse.json({
             success: true,
             shareId,
-            shareUrl,
+            shareUrl: `${origin}/share/${shareId}`,
             expiresAt: expiresAt.toISOString()
         });
 
     } catch (error: any) {
+        if (error instanceof RequestGuardError) {
+            return NextResponse.json(error.payload, { status: error.status });
+        }
+
         console.error('Share Enable Error:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

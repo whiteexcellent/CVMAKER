@@ -1,10 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { getDictionary, Locale, dictionaries, defaultLocale, resolveLocale } from '@/lib/i18n'
+import { getDictionary, type Dictionary, Locale, defaultLocale, resolveLocale } from '@/lib/i18n'
 import Cookies from 'js-cookie'
-
-type Dictionary = typeof dictionaries['en']
 
 interface I18nContextType {
     locale: Locale;
@@ -15,26 +13,45 @@ interface I18nContextType {
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined)
 
-export function I18nProvider({ children, initialLocale = defaultLocale }: { children: React.ReactNode, initialLocale?: Locale }) {
+export function I18nProvider({
+    children,
+    initialLocale = defaultLocale,
+    initialDictionary,
+}: {
+    children: React.ReactNode,
+    initialLocale?: Locale,
+    initialDictionary: Dictionary,
+}) {
     const [locale, setLocaleState] = useState<Locale>(initialLocale)
-    const [dictionary, setDictionary] = useState<Dictionary>(getDictionary(initialLocale))
+    const [dictionary, setDictionary] = useState<Dictionary>(initialDictionary)
 
     // Initialization: Check cookie or browser language if no explicit locale was passed down
     useEffect(() => {
+        let isMounted = true
+
         const savedLocale = Cookies.get('NEXT_LOCALE')
         if (savedLocale) {
             const valid = resolveLocale(savedLocale)
             if (valid !== locale) {
-                setLocaleState(valid)
-                setDictionary(getDictionary(valid))
+                getDictionary(valid).then((loadedDictionary) => {
+                    if (!isMounted) return
+                    setLocaleState(valid)
+                    setDictionary(loadedDictionary)
+                })
             }
+        }
+
+        return () => {
+            isMounted = false
         }
     }, [locale])
 
     const setLocale = (newLocale: Locale) => {
         Cookies.set('NEXT_LOCALE', newLocale, { expires: 365, path: '/' })
-        setLocaleState(newLocale)
-        setDictionary(getDictionary(newLocale))
+        getDictionary(newLocale).then((loadedDictionary) => {
+            setLocaleState(newLocale)
+            setDictionary(loadedDictionary)
+        })
     }
 
     // A helper to traverse the dictionary using dot notation (e.g. `t('dashboard.title')`)
@@ -43,13 +60,7 @@ export function I18nProvider({ children, initialLocale = defaultLocale }: { chil
         let current: any = dictionary
         for (const key of keys) {
             if (current === undefined || current[key] === undefined) {
-                // Fallback to English
-                let enCurrent: any = dictionaries['en']
-                for (const enKey of keys) {
-                    if (enCurrent === undefined || enCurrent[enKey] === undefined) return keyPath
-                    enCurrent = enCurrent[enKey]
-                }
-                return typeof enCurrent === 'string' ? enCurrent : keyPath
+                return keyPath
             }
             current = current[key]
         }

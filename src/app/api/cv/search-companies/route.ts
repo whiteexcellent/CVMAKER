@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
+import { parseJsonBody, RequestGuardError, getRateLimitIdentifier } from '@/lib/request-guards';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
 const schema = z.object({
-    query: z.string().min(1, 'Search query is required.'),
-    location: z.string().optional()
-});
+    query: z.string().trim().min(1, 'Search query is required.').max(160),
+    location: z.string().trim().max(160).optional()
+}).strict();
 
 export async function POST(req: Request) {
     try {
@@ -19,14 +21,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const parsed = schema.safeParse(body);
-        if (!parsed.success) {
-            return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+        try {
+            await enforceRateLimit(supabase, {
+                identifier: getRateLimitIdentifier(req, user.id),
+                routeKey: 'search_companies',
+                maxRequests: 10,
+                windowSeconds: 3600,
+            });
+        } catch (rateLimitError: any) {
+            return NextResponse.json({ error: rateLimitError.message }, { status: 429 });
         }
-        const { query, location } = parsed.data;
 
-        // 1. Check if user is a PRO Subscriber
+        const { query, location } = await parseJsonBody(req, schema, { maxBytes: 4_000 });
+
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('subscription_tier')
@@ -42,79 +49,47 @@ export async function POST(req: Request) {
         }
 
         const fullQuery = `${query} companies in ${location || 'San Francisco'}`;
+        const apifyUrl = 'https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items';
 
-        let formattedCompanies = [];
+        const runRes = await fetch(apifyUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
+            },
+            body: JSON.stringify({
+                searchStringsArray: [fullQuery],
+                maxCrawledPlacesPerSearch: 10
+            }),
+            signal: AbortSignal.timeout(30_000),
+        });
 
-        try {
-            const apifyUrl = `https://api.apify.com/v2/acts/compass~crawler-google-places/run-sync-get-dataset-items`;
-
-            const runRes = await fetch(apifyUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
-                },
-                body: JSON.stringify({
-                    "searchStringsArray": [fullQuery],
-                    "maxCrawledPlacesPerSearch": 10 // Limit the results for faster response
-                })
-            });
-
-            if (!runRes.ok) {
-                const errorText = await runRes.text();
-                console.warn("Apify API Error:", errorText);
-                throw new Error('Apify API failed');
-            }
-
-            const items = await runRes.json();
-            if (items && items.length > 0) {
-                formattedCompanies = items.map((company: any) => ({
-                    title: company.title || company.name || 'Unknown Company',
-                    category: company.categoryName || company.type || '',
-                    website: company.website || '',
-                    phone: company.phone || '',
-                    address: company.address || company.street || '',
-                    rating: company.totalScore || company.rating || 0,
-                    reviews: company.reviewsCount || 0
-                }));
-            }
-        } catch (scrapeError) {
-            console.warn("Falling back to simulated company data due to scraping failure:", scrapeError);
-            // Simulated mock companies
-            formattedCompanies = [
-                {
-                    title: `Tech Innovators ${location || 'HQ'}`,
-                    category: 'Software Company',
-                    website: 'https://example.com/techinnovators',
-                    phone: '+1 555-0198',
-                    address: `123 Innovation Dr, ${location || 'San Francisco'}`,
-                    rating: 4.8,
-                    reviews: 124
-                },
-                {
-                    title: `Global Connect ${query}`,
-                    category: 'IT Consulting',
-                    website: 'https://example.com/globalconnect',
-                    phone: '+1 555-0245',
-                    address: `456 Enterprise Way, ${location || 'New York'}`,
-                    rating: 4.5,
-                    reviews: 89
-                },
-                {
-                    title: `NextGen Solutions`,
-                    category: 'Technology Solutions',
-                    website: 'https://example.com/nextgen',
-                    phone: '+1 555-0377',
-                    address: `789 Future St, ${location || 'London'}`,
-                    rating: 4.9,
-                    reviews: 312
-                }
-            ];
+        if (!runRes.ok) {
+            const errorText = await runRes.text();
+            console.warn('Apify API Error:', errorText);
+            return NextResponse.json({ error: 'External company search provider failed.' }, { status: 502 });
         }
+
+        const items = await runRes.json();
+        const formattedCompanies = items && items.length > 0
+            ? items.map((company: any) => ({
+                title: company.title || company.name || 'Unknown Company',
+                category: company.categoryName || company.type || '',
+                website: company.website || '',
+                phone: company.phone || '',
+                address: company.address || company.street || '',
+                rating: company.totalScore || company.rating || 0,
+                reviews: company.reviewsCount || 0
+            }))
+            : [];
 
         return NextResponse.json({ companies: formattedCompanies });
 
     } catch (err: any) {
+        if (err instanceof RequestGuardError) {
+            return NextResponse.json(err.payload, { status: err.status });
+        }
+
         console.error('Company Search Error:', err);
         return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 });
     }

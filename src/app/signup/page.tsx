@@ -1,5 +1,7 @@
 'use client';
 
+import { Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { signUpWithMagicLink } from '@/app/auth-actions'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,8 +13,10 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { useTranslation } from '@/components/I18nProvider'
 import { LanguageToggle } from '@/components/LanguageToggle'
 
-export default function SignupPage() {
+function SignupContent() {
     const { t } = useTranslation();
+    const searchParams = useSearchParams();
+    const next = searchParams.get('next') || '/dashboard';
 
     return (
         <div className="flex min-h-screen w-full flex-col bg-white dark:bg-black text-black dark:text-white font-sans selection:bg-black/10 dark:selection:bg-white/20 transition-colors duration-300">
@@ -37,6 +41,7 @@ export default function SignupPage() {
                         </CardHeader>
                         <CardContent className="pb-8 px-8">
                             <form className="grid gap-6">
+                                <input type="hidden" name="next" value={next} />
                                 <div className="grid gap-3">
                                     <Label htmlFor="email" className="text-black/80 dark:text-white/80 font-bold">{t('auth.emailLabel')}</Label>
                                     <Input
@@ -70,7 +75,7 @@ export default function SignupPage() {
                                     </div>
 
                                     <Button asChild variant="outline" className="w-full h-14 bg-transparent border-2 border-black/20 dark:border-white/20 text-black dark:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300 font-bold rounded-xl hover:scale-[1.02] active:scale-[0.98]">
-                                        <Link href="/login">{t('auth.logInInstead')}</Link>
+                                        <Link href={`/login?next=${encodeURIComponent(next)}`}>{t('auth.logInInstead')}</Link>
                                     </Button>
                                 </div>
                             </form>
@@ -79,5 +84,13 @@ export default function SignupPage() {
                 </div>
             </div>
         </div>
+    )
+}
+
+export default function SignupPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-white dark:bg-black" />}>
+            <SignupContent />
+        </Suspense>
     )
 }

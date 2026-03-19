@@ -270,9 +270,9 @@ export default function DashboardClient({ totalCredits, resumes, coverLetters = 
                                         .map((doc) => {
                                             const isExpired = new Date() > new Date(doc.share_expires_at);
                                             let typeLabel = t('dashboard.documentType');
-                                            if (doc.template_id !== undefined) typeLabel = t('dashboard.cvType');
-                                            else if (doc.target_company !== undefined) typeLabel = t('dashboard.presentationType');
-                                            else typeLabel = t('dashboard.coverLetterType');
+                                            if (doc.documentType === 'resume') typeLabel = t('dashboard.cvType');
+                                            else if (doc.documentType === 'presentation') typeLabel = t('dashboard.presentationType');
+                                            else if (doc.documentType === 'cover_letter') typeLabel = t('dashboard.coverLetterType');
 
                                             return (
                                                 <div key={doc.id} className="p-6 flex flex-col justify-between rounded-2xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">

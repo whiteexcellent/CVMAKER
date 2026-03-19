@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
+
 import { stripe } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
+import { getSiteUrl } from '@/lib/env';
 
 export const dynamic = 'force-dynamic';
 
@@ -9,33 +11,26 @@ export async function POST(req: Request) {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
-        if (!user || !user.email) {
-            return NextResponse.json({ error: 'Unauthorized or missing email' }, { status: 401 });
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        // Search for the Stripe customer by email
-        const customers = await stripe.customers.list({
-            email: user.email,
-            limit: 1
-        });
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('stripe_customer_id')
+            .eq('id', user.id)
+            .single();
 
-        if (customers.data.length === 0) {
-            // No customer found, they probably haven't subscribed yet
+        if (!profile?.stripe_customer_id) {
             return NextResponse.json({ url: null, redirect: '/pricing' });
         }
 
-        const { origin } = new URL(req.url);
-        const customerId = customers.data[0].id;
-        const returnUrl = `${origin}/settings`;
-
-        // Create Stripe Customer Portal session
         const portalSession = await stripe.billingPortal.sessions.create({
-            customer: customerId,
-            return_url: returnUrl,
+            customer: profile.stripe_customer_id,
+            return_url: `${getSiteUrl()}/settings`,
         });
 
         return NextResponse.json({ url: portalSession.url });
-
     } catch (err: any) {
         console.error('Stripe Portal Error:', err);
         return NextResponse.json({ error: err.message }, { status: 500 });

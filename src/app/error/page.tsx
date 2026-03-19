@@ -4,8 +4,8 @@ import { getDictionary, resolveLocale } from '@/lib/i18n';
 export default async function ErrorPage({ searchParams }: { searchParams: Promise<{ message?: string, error?: string }> }) {
     const { message, error } = await searchParams;
     const cookieStore = await cookies();
-    const locale = resolveLocale(cookieStore.get('locale')?.value);
-    const dict = getDictionary(locale);
+    const locale = resolveLocale(cookieStore.get('NEXT_LOCALE')?.value);
+    const dict = await getDictionary(locale);
 
     let displayMessage = message || dict.error.defaultMessage;
 

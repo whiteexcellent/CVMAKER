@@ -1,18 +1,13 @@
 import { NextResponse } from 'next/server';
-import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
 import { checkAndDeductCredit, refundCredit } from '@/lib/credits';
 import { groq } from '@/lib/groq';
-export const dynamic = 'force-dynamic';
+import { presentationContentSchema, presentationGenerateRequestSchema } from '@/lib/schemas';
+import { parseJsonBody, RequestGuardError, getRateLimitIdentifier } from '@/lib/request-guards';
+import { enforceRateLimit } from '@/lib/rate-limit';
 
-const schema = z.object({
-    resumeId: z.string().uuid(),
-    jobDescription: z.string().optional(),
-    targetRole: z.string().min(2),
-    targetCompany: z.string().min(2),
-    language: z.string().default('English')
-});
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
     try {
@@ -23,23 +18,35 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const body = await req.json();
-        const parsed = schema.safeParse(body);
-
-        if (!parsed.success) {
-            return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
+        try {
+            await enforceRateLimit(supabase, {
+                identifier: getRateLimitIdentifier(req, user.id),
+                routeKey: 'generate_presentation',
+                maxRequests: 8,
+                windowSeconds: 3600,
+            });
+        } catch (rateLimitError: any) {
+            return NextResponse.json({ error: rateLimitError.message }, { status: 429 });
         }
 
-        const { resumeId, jobDescription, targetRole, targetCompany, language } = parsed.data;
+        const { resumeId, jobDescription, targetRole, targetCompany, language } = await parseJsonBody(
+            req,
+            presentationGenerateRequestSchema,
+            { maxBytes: 32_000 }
+        );
 
-        // Fetch resume
-        const { data: resume, error: resumeErr } = await supabase.from('resumes').select('*').eq('id', resumeId).eq('user_id', user.id).single();
+        const { data: resume, error: resumeErr } = await supabase
+            .from('resumes')
+            .select('content')
+            .eq('id', resumeId)
+            .eq('user_id', user.id)
+            .single();
+
         if (resumeErr || !resume) {
             return NextResponse.json({ error: 'Resume not found' }, { status: 404 });
         }
 
-        // Deduct 1 Credit
-        const deductionResult = await checkAndDeductCredit(user.id, 1);
+        const deductionResult = await checkAndDeductCredit(user.id, 1, 'generate_presentation');
         if (!deductionResult.allowed) {
             return NextResponse.json({ error: deductionResult.reason }, { status: 402 });
         }
@@ -62,16 +69,12 @@ Format your response exclusively as a JSON object matching this schema:
 }`;
 
         const userPrompt = `CV Data: ${JSON.stringify(resume.content)}
-        
+
 Target Role: ${targetRole}
 Target Company: ${targetCompany}
-Job Description: ${jobDescription || "No specific job description provided. Base the presentation strongly on the target role and company."}
+Job Description: ${jobDescription || 'No specific job description provided. Base the presentation strongly on the target role and company.'}
 
 INSTRUCTIONS: Create 4-5 highly persuasive slides focusing on measurable impact, relevant skills, and deep cultural/technical alignment with the company.`;
-
-        let structuredPresentation;
-        let cleanedText = '';
-
 
         const chatCompletion = await groq.chat.completions.create({
             messages: [
@@ -84,48 +87,45 @@ INSTRUCTIONS: Create 4-5 highly persuasive slides focusing on measurable impact,
         });
 
         const rawResponse = chatCompletion.choices[0]?.message?.content || '{}';
-        cleanedText = rawResponse.replace(/```json\n?|\`\`\`\n?/g, '').trim();
+        const cleanedText = rawResponse.replace(/```json\n?|\`\`\`\n?/g, '').trim();
 
+        let structuredPresentation;
         try {
-            structuredPresentation = JSON.parse(cleanedText);
-        } catch (jsonParseError) {
-            console.error("Failed to parse Presentation JSON:", cleanedText);
-            await refundCredit(user.id, 1);
+            structuredPresentation = presentationContentSchema.parse(JSON.parse(cleanedText));
+        } catch {
+            await refundCredit(user.id, 1, 'generate_presentation_refund');
             return NextResponse.json({ error: 'AI failed to generate a valid structure. Please try again (Credit Refunded).' }, { status: 500 });
         }
 
-        // --- Presenton PPTX Generation (Non-Blocking Enhancement) ---
         let presentonId: string | null = null;
         let pptxPath: string | null = null;
 
         const presentonUrl = process.env.PRESENTON_API_URL || 'http://localhost:5000';
 
         try {
-            // Build a content summary from the Groq-generated slides for Presenton
             const slideSummary = structuredPresentation.slides
-                ?.map((s: any) => `${s.heading}: ${(s.talking_points || []).join('. ')}`)
-                .join('\n\n') || '';
+                .map((slide) => `${slide.heading}: ${slide.talking_points.join('. ')}`)
+                .join('\n\n');
 
-            const presentonContent = `Interview Pitch Deck for ${targetCompany} — ${targetRole}\n\n${structuredPresentation.title}\n${structuredPresentation.subtitle}\n\n${slideSummary}\n\n${structuredPresentation.conclusion || ''}`;
+            const presentonContent = `Interview Pitch Deck for ${targetCompany} - ${targetRole}\n\n${structuredPresentation.title}\n${structuredPresentation.subtitle || ''}\n\n${slideSummary}\n\n${structuredPresentation.conclusion || ''}`;
 
             const presentonRes = await fetch(`${presentonUrl}/api/v1/ppt/presentation/generate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: presentonContent,
-                    n_slides: structuredPresentation.slides?.length || 5,
-                    language: language,
+                    n_slides: structuredPresentation.slides.length,
+                    language,
                     template: 'general',
                     export_as: 'pptx'
                 }),
-                signal: AbortSignal.timeout(60000) // 60s timeout
+                signal: AbortSignal.timeout(60_000)
             });
 
             if (presentonRes.ok) {
                 const presentonData = await presentonRes.json();
                 presentonId = presentonData.presentation_id || null;
                 pptxPath = presentonData.path || null;
-                console.log(`Presenton PPTX generated: ${pptxPath}`);
             } else {
                 console.warn(`Presenton API returned ${presentonRes.status}, skipping PPTX generation`);
             }
@@ -133,11 +133,11 @@ INSTRUCTIONS: Create 4-5 highly persuasive slides focusing on measurable impact,
             console.warn('Presenton service unavailable, skipping PPTX:', presentonErr.message);
         }
 
-        // Save to Database
         const { data: savedPresentation, error: saveError } = await supabase.from('presentations')
             .insert({
                 user_id: user.id,
                 resume_id: resumeId,
+                title: structuredPresentation.title || `${targetCompany} Presentation`,
                 target_company: targetCompany,
                 content: structuredPresentation,
                 ...(presentonId && { presenton_id: presentonId }),
@@ -147,8 +147,8 @@ INSTRUCTIONS: Create 4-5 highly persuasive slides focusing on measurable impact,
             .single();
 
         if (saveError) {
-            console.error("Error saving presentation:", saveError)
-            await refundCredit(user.id, 1);
+            console.error('Error saving presentation:', saveError);
+            await refundCredit(user.id, 1, 'generate_presentation_refund');
             return NextResponse.json({ error: 'Failed to save presentation securely. Please try again (Credit Refunded).' }, { status: 500 });
         }
 
@@ -156,10 +156,14 @@ INSTRUCTIONS: Create 4-5 highly persuasive slides focusing on measurable impact,
             success: true,
             presentationId: savedPresentation.id,
             data: structuredPresentation,
-            pptxPath: pptxPath,
+            pptxPath,
         });
 
     } catch (error: any) {
+        if (error instanceof RequestGuardError) {
+            return NextResponse.json(error.payload, { status: error.status });
+        }
+
         console.error('Generation Error:', error);
         return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
     }

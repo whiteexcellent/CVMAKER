@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { createClient as createSupabaseAdminClient } from '@supabase/supabase-js';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { removeStoredPdf } from '@/lib/pdf';
 
 export async function DELETE(request: Request) {
     try {
@@ -12,17 +13,16 @@ export async function DELETE(request: Request) {
         }
 
         const userId = authData.user.id;
+        const supabaseAdmin = getSupabaseAdminClient();
 
-        // Ensure we have the service role key to delete a user from auth
-        if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
-            console.error('Missing Supabase Service Role Key');
-            return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+        const { data: resumes } = await supabaseAdmin
+            .from('resumes')
+            .select('pdf_path, pdf_url')
+            .eq('user_id', userId);
+
+        for (const resume of resumes || []) {
+            await removeStoredPdf((resume as any).pdf_path || (resume as any).pdf_url);
         }
-
-        const supabaseAdmin = createSupabaseAdminClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL,
-            process.env.SUPABASE_SERVICE_ROLE_KEY
-        );
 
         // Delete from auth.users using the admin API
         // This will automatically cascade to the 'profiles' table and other linked tables if

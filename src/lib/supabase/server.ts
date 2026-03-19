@@ -1,13 +1,14 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { getRequiredEnv } from '@/lib/env'
 
 export async function createClient() {
     const cookieStore = await cookies()
 
     return createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://mock.supabase.co',
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'mock_anon_key',
+        getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL'),
+        getRequiredEnv('NEXT_PUBLIC_SUPABASE_ANON_KEY'),
         {
             cookies: {
                 getAll() {
@@ -34,12 +35,8 @@ export async function createClient() {
  * WARNING: This should ONLY be used in server-side safe environments (Actions, API Routes)
  */
 export async function createAdminClient() {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-        throw new Error('Supabase admin credentials are missing from environment variables.')
-    }
+    const supabaseUrl = getRequiredEnv('NEXT_PUBLIC_SUPABASE_URL')
+    const supabaseServiceRoleKey = getRequiredEnv('SUPABASE_SERVICE_ROLE_KEY')
 
     return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
         auth: {

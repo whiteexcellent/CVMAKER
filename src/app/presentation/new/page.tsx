@@ -18,7 +18,7 @@ export default async function NewPresentationPage() {
     const cookieStore = await cookies()
     const localeCookie = cookieStore.get('NEXT_LOCALE')?.value
     const locale = resolveLocale(localeCookie)
-    const dict = getDictionary(locale)
+    const dict = await getDictionary(locale)
 
     const { data: resumes } = await supabase
         .from('resumes')

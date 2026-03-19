@@ -1,72 +1,68 @@
-import { tr } from './dictionaries/tr';
-import { en } from './dictionaries/en';
-import { de } from './dictionaries/de';
-import { ar } from './dictionaries/ar';
-import { ru } from './dictionaries/ru';
-import { es } from './dictionaries/es';
-import { pt } from './dictionaries/pt';
-import { ja } from './dictionaries/ja';
-import { zh } from './dictionaries/zh';
-import { hi } from './dictionaries/hi';
-import { fr } from './dictionaries/fr';
-import { it } from './dictionaries/it';
-import { ko } from './dictionaries/ko';
-import { id } from './dictionaries/id';
-import { vi } from './dictionaries/vi';
+export type Dictionary = Record<string, any>;
 
-export const dictionaries = {
-    tr,
-    en,
-    de,
-    ar,
-    ru,
-    es,
-    pt,
-    ja,
-    zh,
-    hi,
-    fr,
-    it,
-    ko,
-    id,
-    vi
-};
+type DictionaryLoader = () => Promise<any>;
 
-export type Locale = keyof typeof dictionaries;
-// English is the absolute global default if nothing matches. 
+const dictionaryLoaders = {
+    tr: () => import('./dictionaries/tr').then((module) => module.tr),
+    en: () => import('./dictionaries/en').then((module) => module.en),
+    de: () => import('./dictionaries/de').then((module) => module.de),
+    ar: () => import('./dictionaries/ar').then((module) => module.ar),
+    ru: () => import('./dictionaries/ru').then((module) => module.ru),
+    es: () => import('./dictionaries/es').then((module) => module.es),
+    pt: () => import('./dictionaries/pt').then((module) => module.pt),
+    ja: () => import('./dictionaries/ja').then((module) => module.ja),
+    zh: () => import('./dictionaries/zh').then((module) => module.zh),
+    hi: () => import('./dictionaries/hi').then((module) => module.hi),
+    fr: () => import('./dictionaries/fr').then((module) => module.fr),
+    it: () => import('./dictionaries/it').then((module) => module.it),
+    ko: () => import('./dictionaries/ko').then((module) => module.ko),
+    id: () => import('./dictionaries/id').then((module) => module.id),
+    vi: () => import('./dictionaries/vi').then((module) => module.vi),
+} satisfies Record<string, DictionaryLoader>;
+
+export type Locale = keyof typeof dictionaryLoaders;
 export const defaultLocale: Locale = 'en';
+const knownLocales = new Set(Object.keys(dictionaryLoaders));
 
-export function getDictionary(locale: Locale) {
-    const requestedDict = dictionaries[locale] || dictionaries[defaultLocale];
-    const fallbackDict = dictionaries[defaultLocale];
-
-    // Create a proxy that defaults to English (defaultLocale) if a specific key or nested object is missing in the chosen language.
-    // This stops the UI from showing empty strings or crashing when new keys (like toast.*) are added but not yet translated in all 15 languages.
-    return new Proxy(requestedDict, {
+function createFallbackProxy(requested: Dictionary, fallback: Dictionary): Dictionary {
+    return new Proxy(requested, {
         get(target, prop: string) {
-            const hasProp = prop in target;
-            if (!hasProp) return (fallbackDict as any)[prop];
+            const value = (target as any)[prop];
 
-            const val = (target as any)[prop];
-            // If the value is a nested dictionary section (e.g. { toast: {...} } ), wrap it in another Proxy
-            if (val && typeof val === 'object' && !Array.isArray(val)) {
-                return new Proxy(val, {
+            if (value === undefined) {
+                return (fallback as any)[prop];
+            }
+
+            if (value && typeof value === 'object' && !Array.isArray(value)) {
+                return new Proxy(value, {
                     get(subTarget, subProp: string) {
-                        return subProp in subTarget ? subTarget[subProp] : (fallbackDict as any)[prop]?.[subProp];
+                        return subProp in subTarget ? (subTarget as any)[subProp] : (fallback as any)[prop]?.[subProp];
                     }
                 });
             }
-            return val;
+
+            return value;
         }
-    }) as typeof dictionaries['en'];
+    }) as Dictionary;
 }
 
-// Helper to reliably cast standard ISO language strings (e.g. 'en-US', 'tr') to our mapped Locale
+export async function getDictionary(locale: Locale): Promise<Dictionary> {
+    const requestedLoader = dictionaryLoaders[locale] || dictionaryLoaders[defaultLocale];
+    const [requestedDictionary, fallbackDictionary] = await Promise.all([
+        requestedLoader(),
+        dictionaryLoaders[defaultLocale](),
+    ]);
+
+    return createFallbackProxy(requestedDictionary, fallbackDictionary);
+}
+
 export function resolveLocale(rawLanguage: string | undefined | null): Locale {
     if (!rawLanguage) return defaultLocale;
+
     const shortCode = rawLanguage.toLowerCase().substring(0, 2);
-    if (Object.keys(dictionaries).includes(shortCode)) {
+    if (knownLocales.has(shortCode)) {
         return shortCode as Locale;
     }
+
     return defaultLocale;
 }

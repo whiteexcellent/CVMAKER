@@ -1,9 +1,27 @@
 import { createClient } from '@/lib/supabase/server'
+import { getSupabaseAdminClient } from '@/lib/supabase/admin'
 
-export async function checkAndDeductCredit(userId: string, cost: number = 1) {
+async function logCreditTransaction(userId: string, amount: number, type: string, metadata?: Record<string, unknown>) {
+    try {
+        const supabaseAdmin = getSupabaseAdminClient();
+        const { error } = await supabaseAdmin.from('credit_transactions').insert({
+            user_id: userId,
+            amount,
+            type,
+            metadata: metadata || null,
+        });
+
+        if (error) {
+            console.error('Failed to record credit transaction:', error);
+        }
+    } catch (error) {
+        console.error('Failed to initialize admin client for credit transaction logging:', error);
+    }
+}
+
+export async function checkAndDeductCredit(userId: string, cost = 1, routeKey = 'usage') {
     const supabase = await createClient()
 
-    // 1. Get the user's profile
     const { data: profile, error } = await supabase
         .from('profiles')
         .select('daily_credits, last_credit_reset, subscription_tier')
@@ -13,7 +31,6 @@ export async function checkAndDeductCredit(userId: string, cost: number = 1) {
     if (error || !profile) {
         console.warn('Profile not found, attempting auto-heal for user:', userId)
 
-        // Auto-heal missing profile
         const { data: authUser, error: authError } = await supabase.auth.getUser()
 
         if (!authError && authUser?.user?.email) {
@@ -33,40 +50,38 @@ export async function checkAndDeductCredit(userId: string, cost: number = 1) {
                 .single()
 
             if (!insertError && newProfile) {
-                // Successfully auto-healed, proceed with RPC
-                return executeDeductionRpc(supabase, userId, cost)
-            } else {
-                console.error("Auto-heal upsert failed, but user exists in Auth. Allowing safe fallback:", insertError)
-                return { allowed: true, isUnlimited: false, remainingCredits: 1 }
+                return executeDeductionRpc(supabase, userId, cost, routeKey)
             }
+
+            console.error('Auto-heal upsert failed. Blocking credit deduction request:', insertError)
         }
 
         return { allowed: false, reason: 'Profile not found and auto-heal failed. Please log out and back in.' }
     }
 
-    return executeDeductionRpc(supabase, userId, cost)
+    return executeDeductionRpc(supabase, userId, cost, routeKey)
 }
 
-async function executeDeductionRpc(supabase: any, userId: string, cost: number) {
-    // 1. Execute the Atomic SQL Deduction
+async function executeDeductionRpc(supabase: any, userId: string, cost: number, routeKey: string) {
     const { data: result, error: rpcError } = await supabase.rpc('deduct_credit', {
         user_id_param: userId,
         cost_param: cost
     });
 
     if (rpcError) {
-        console.error("Critical: Failed to execute credit deduction RPC:", rpcError);
-        return { allowed: false, reason: "Payment system error. Please try again later." };
+        console.error('Critical: Failed to execute credit deduction RPC:', rpcError);
+        return { allowed: false, reason: 'Payment system error. Please try again later.' };
     }
 
-    // 2. Process Result from PostgreSQL
     if (!result.success) {
         return { allowed: false, reason: result.reason || 'Insufficient Credits.' };
     }
 
-    // 3. (Optional) You can still log transactions here if needed, but since it's usage, 
-    // keeping it inside Javascript is fine for the ledger, as the balance deduction is already safely processed.
-    // The previous implementation did not mandate transaction logs for every single usage strictly, so we just return.
+    await logCreditTransaction(userId, -cost, routeKey, {
+        isUnlimited: result.is_unlimited,
+        remainingDaily: result.remaining_daily,
+        remainingPermanent: result.remaining_permanent,
+    });
 
     return {
         allowed: true,
@@ -75,21 +90,10 @@ async function executeDeductionRpc(supabase: any, userId: string, cost: number) 
     };
 }
 
-import { createClient as createAdminClient } from '@supabase/supabase-js';
-
-export async function refundCredit(userId: string, amount: number = 1) {
-    if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
-        console.error("Refund failed: Missing SUPABASE_SERVICE_ROLE_KEY");
-        return;
-    }
-
+export async function refundCredit(userId: string, amount = 1, routeKey = 'refund') {
     try {
-        const adminAuthClient = createAdminClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.SUPABASE_SERVICE_ROLE_KEY!
-        );
+        const adminAuthClient = getSupabaseAdminClient();
 
-        // Use atomic RPC to add credits back — prevents race conditions
         const { error } = await adminAuthClient.rpc('add_credits', {
             user_id_param: userId,
             amount_param: amount
@@ -100,8 +104,11 @@ export async function refundCredit(userId: string, amount: number = 1) {
             return;
         }
 
+        await logCreditTransaction(userId, amount, routeKey, {
+            refunded: true,
+        });
         console.info(`Refunded ${amount} credit(s) atomically to user ${userId}`);
     } catch (e) {
-        console.error("Critical error attempting to refund credit:", e);
+        console.error('Critical error attempting to refund credit:', e);
     }
 }

@@ -26,8 +26,7 @@ export function HistoryTab({ resumes, handleDeleteResume }: HistoryTabProps) {
                 {resumes && resumes.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {resumes.map((resume) => {
-                            const parsedContent = typeof resume.content === 'string' ? JSON.parse(resume.content) : resume.content;
-                            const title = parsedContent?.experience?.[0]?.title || t('dashboard.untitledCv');
+                            const title = resume.title || t('dashboard.untitledCv');
                             const date = new Date(resume.created_at).toLocaleDateString();
                             return (
                                 <div key={resume.id} className="p-6 flex flex-col justify-between rounded-2xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">

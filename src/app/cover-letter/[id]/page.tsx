@@ -1,13 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import CoverLetterViewer from '@/app/cover-letter/[id]/CoverLetterViewer'
+import { isDevAuthBypassEnabled } from '@/lib/env'
 
 export default async function CoverLetterPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const supabase = await createClient()
 
     const { data: { user } } = await supabase.auth.getUser()
-    const bypassAuth = process.env.NODE_ENV === 'development' || true;
+    const bypassAuth = isDevAuthBypassEnabled();
 
     if (!bypassAuth && !user) redirect('/login')
 

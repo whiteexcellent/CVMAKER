@@ -1,19 +1,14 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Printer, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
 import { useTranslation } from '@/components/I18nProvider'
+import { normalizeCoverLetterContent } from '@/lib/cover-letter'
 
 export default function CoverLetterViewer({ coverLetter }: { coverLetter: any }) {
-    const [parsedContent] = useState(() => {
-        try {
-            return typeof coverLetter.content === 'string' ? JSON.parse(coverLetter.content) : coverLetter.content
-        } catch {
-            return {}
-        }
-    })
+    const parsedContent = useMemo(() => normalizeCoverLetterContent(coverLetter.content), [coverLetter.content])
     const { t } = useTranslation()
 
     const handlePrint = () => {
@@ -51,7 +46,7 @@ export default function CoverLetterViewer({ coverLetter }: { coverLetter: any })
                         <div className="flex justify-between items-start font-sans text-sm">
                             <div className="space-y-1 text-gray-700">
                                 <p className="font-bold text-black">{parsedContent.recipient_name || t('viewer.hiringManager')}</p>
-                                <p className="font-bold">{coverLetter.target_company || t('viewer.targetCompany')}</p>
+                                <p className="font-bold">{coverLetter.company_name || parsedContent.meta?.target_company || t('viewer.targetCompany')}</p>
                             </div>
                             <p className="text-gray-500 font-medium">{parsedContent.date || new Date().toLocaleDateString()}</p>
                         </div>

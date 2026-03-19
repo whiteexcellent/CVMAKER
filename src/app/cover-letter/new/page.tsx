@@ -6,12 +6,13 @@ import { ThemeToggle } from '@/components/ThemeToggle'
 import { LanguageToggle } from '@/components/LanguageToggle'
 import { cookies } from 'next/headers'
 import { getDictionary, resolveLocale } from '@/lib/i18n'
+import { isDevAuthBypassEnabled } from '@/lib/env'
 
 export default async function NewCoverLetterPage() {
     const supabase = await createClient()
 
     const { data, error } = await supabase.auth.getUser()
-    const bypassAuth = process.env.NODE_ENV === 'development' || true;
+    const bypassAuth = isDevAuthBypassEnabled();
     if (!bypassAuth && (error || !data?.user)) {
         redirect('/login')
     }
@@ -19,7 +20,7 @@ export default async function NewCoverLetterPage() {
     const cookieStore = await cookies()
     const localeCookie = cookieStore.get('NEXT_LOCALE')?.value
     const locale = resolveLocale(localeCookie)
-    const dict = getDictionary(locale)
+    const dict = await getDictionary(locale)
 
     const { data: resumes } = await supabase
         .from('resumes')
