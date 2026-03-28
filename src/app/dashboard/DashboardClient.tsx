@@ -1,313 +1,435 @@
-'use client'
+'use client';
 
-import { useState, useRef } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { FileText, Linkedin, Briefcase, Building2, Search, Loader2, Trash2, MonitorPlay, MessageSquareText, Plus, Sparkles } from 'lucide-react'
-import { toast } from 'sonner'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useTranslation } from '@/components/I18nProvider'
+import { useState } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import {
+  FileText,
+  Linkedin,
+  Briefcase,
+  Building2,
+  Search,
+  Loader2,
+  MessageSquareText,
+  MonitorPlay,
+  Sparkles,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useTranslation } from '@/components/I18nProvider';
+import { motion, AnimatePresence } from 'framer-motion';
+import { BlurFade } from '@/components/reactbits/BlurFade';
+import { CountUp } from '@/components/reactbits/CountUp';
 
-import { JobSearchTab } from './tabs/JobSearchTab'
-import { CompanySearchTab } from './tabs/CompanySearchTab'
-import { HistoryTab } from './tabs/HistoryTab'
-import { CoverLettersTab } from './tabs/CoverLettersTab'
-import { PresentationsTab } from './tabs/PresentationsTab'
+import { JobSearchTab } from './tabs/JobSearchTab';
+import { CompanySearchTab } from './tabs/CompanySearchTab';
+import { HistoryTab } from './tabs/HistoryTab';
+import { CoverLettersTab } from './tabs/CoverLettersTab';
+import { PresentationsTab } from './tabs/PresentationsTab';
 
 interface DashboardClientProps {
-    totalCredits: number
-    resumes: any[]
-    coverLetters?: any[]
-    presentations?: any[]
-    isPro?: boolean
+  totalCredits: number;
+  resumes: any[];
+  coverLetters?: any[];
+  presentations?: any[];
+  isPro?: boolean;
 }
 
-export default function DashboardClient({ totalCredits, resumes, coverLetters = [], presentations = [], isPro }: DashboardClientProps) {
-    const [state, setState] = useState({
-        isLinkedinImporting: false,
-        error: '',
-        deleteId: null as string | null,
-        localResumes: resumes,
-        localCoverLetters: coverLetters,
-        localPresentations: presentations,
-        linkedinUrl: ''
-    });
+export default function DashboardClient({
+  totalCredits,
+  resumes,
+  coverLetters = [],
+  presentations = [],
+  isPro,
+}: DashboardClientProps) {
+  const [state, setState] = useState({
+    isLinkedinImporting: false,
+    error: '',
+    deleteId: null as string | null,
+    localResumes: resumes,
+    localCoverLetters: coverLetters,
+    localPresentations: presentations,
+    linkedinUrl: '',
+  });
 
-    const updateState = (updates: Partial<typeof state>) => setState(prev => ({ ...prev, ...updates }));
+  const [activeTab, setActiveTab] = useState('create');
 
-    const { isLinkedinImporting, error, deleteId, localResumes, localCoverLetters, localPresentations, linkedinUrl } = state;
+  const updateState = (updates: Partial<typeof state>) =>
+    setState((prev) => ({ ...prev, ...updates }));
 
-    const setIsLinkedinImporting = (val: boolean) => updateState({ isLinkedinImporting: val });
-    const setError = (val: string) => updateState({ error: val });
-    const setDeleteId = (val: string | null) => updateState({ deleteId: val });
-    const setLocalResumes = (fn: (prev: any[]) => any[]) => updateState({ localResumes: fn(state.localResumes) });
-    const setLinkedinUrl = (val: string) => updateState({ linkedinUrl: val });
+  const {
+    isLinkedinImporting,
+    error,
+    localResumes,
+    localCoverLetters,
+    localPresentations,
+    linkedinUrl,
+  } = state;
 
-    const router = useRouter()
-    const { t } = useTranslation()
+  const setIsLinkedinImporting = (val: boolean) => updateState({ isLinkedinImporting: val });
+  const setError = (val: string) => updateState({ error: val });
+  const setDeleteId = (val: string | null) => updateState({ deleteId: val });
+  const setLocalResumes = (fn: (prev: any[]) => any[]) =>
+    updateState({ localResumes: fn(state.localResumes) });
+  const setLinkedinUrl = (val: string) => updateState({ linkedinUrl: val });
 
+  const router = useRouter();
+  const { t } = useTranslation();
 
-
-    // States for LinkedIn are now in the single state object
-
-
-    const handleLinkedinImport = async (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!linkedinUrl) return
-        setIsLinkedinImporting(true)
-        setError('')
-        try {
-            const res = await fetch('/api/cv/import-linkedin', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ linkedinUrl })
-            })
-            const data = await res.json()
-            if (!res.ok) throw new Error(data.error || 'Failed to import')
-            // Save to local storage to pass to wizard
-            localStorage.setItem('scrapedCvData', JSON.stringify(data))
-            router.push('/wizard')
-        } catch (err: any) {
-            setError(err.message)
-        } finally {
-            setIsLinkedinImporting(false)
-        }
+  const handleLinkedinImport = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!linkedinUrl) return;
+    setIsLinkedinImporting(true);
+    setError('');
+    try {
+      const res = await fetch('/api/cv/import-linkedin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ linkedinUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to import');
+      // Save to local storage to pass to wizard
+      localStorage.setItem('scrapedCvData', JSON.stringify(data));
+      router.push('/wizard');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setIsLinkedinImporting(false);
     }
+  };
 
-    const handleDeleteResume = async (id: string) => {
-        setDeleteId(id);
-        try {
-            const res = await fetch(`/api/cv/${id}`, { method: 'DELETE' });
-            if (!res.ok) throw new Error('Failed to delete CV');
+  const handleDeleteResume = async (id: string) => {
+    setDeleteId(id);
+    try {
+      const res = await fetch(`/api/cv/${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete CV');
 
-            setLocalResumes(prev => prev.filter(r => r.id !== id));
-            toast.success('CV deleted successfully');
-        } catch (err: any) {
-            toast.error(err.message || 'Could not delete CV');
-        } finally {
-            setDeleteId(null);
-        }
+      setLocalResumes((prev) => prev.filter((r) => r.id !== id));
+      toast.success('CV deleted successfully');
+    } catch (err: any) {
+      toast.error(err.message || 'Could not delete CV');
+    } finally {
+      setDeleteId(null);
     }
+  };
 
-    return (
-        <div className="space-y-6">
-            {!isPro && (
-                <div className="bg-black dark:bg-white dark:text-black text-white rounded-3xl p-6 md:p-10 flex flex-col md:flex-row items-center justify-between shadow-2xl mb-8 relative overflow-hidden ring-1 ring-black/5 dark:ring-white/5">
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none mix-blend-overlay"></div>
-                    <div className="relative z-10">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 dark:border-black/20 bg-white/10 dark:bg-black/10 text-xs font-bold uppercase tracking-widest mb-4 backdrop-blur-md">
-                            <Sparkles className="w-3.5 h-3.5" /> OMNICV PRO
-                        </div>
-                        <h3 className="font-black text-2xl md:text-3xl tracking-tight mb-2">
-                            {t('dashboard.upgradePro')}
-                        </h3>
-                        <p className="text-white/70 dark:text-black/70 font-medium max-w-xl">
-                            {t('dashboard.upgradeDesc')}
-                        </p>
-                    </div>
-                    <Button asChild className="relative z-10 mt-6 md:mt-0 bg-white text-black hover:bg-white/90 dark:bg-black dark:text-white dark:hover:bg-black/90 font-black text-lg h-14 px-10 whitespace-nowrap border-0 rounded-xl transition-transform hover:scale-105">
-                        <Link href="/pricing">
-                            {t('dashboard.upgradeBtn')}
-                        </Link>
-                    </Button>
-                </div>
-            )}
+  const TABS = [
+    { id: 'create', icon: FileText, label: t('dashboard.builder') },
+    { id: 'history', icon: FileText, label: t('dashboard.history') },
+    { id: 'cover-letters', icon: MessageSquareText, label: t('dashboard.coverLetters') },
+    { id: 'presentations', icon: MonitorPlay, label: t('dashboard.presentations') },
+    { id: 'linkedin', icon: Linkedin, label: t('dashboard.linkedin') },
+    { id: 'jobs', icon: Briefcase, label: t('dashboard.findJobs') },
+    { id: 'companies', icon: Building2, label: t('dashboard.findCompanies') },
+    { id: 'analytics', icon: Search, label: t('dashboard.analytics') },
+  ];
 
-            <Tabs defaultValue="create" className="space-y-6">
-                <TabsList className="bg-slate-100/50 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/5 p-1.5 rounded-2xl flex flex-wrap h-auto gap-2">
-                    <TabsTrigger value="create" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <FileText className="w-4 h-4 mr-2" />
-                        {t('dashboard.builder')}
-                    </TabsTrigger>
-                    <TabsTrigger value="history" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <FileText className="w-4 h-4 mr-2" />
-                        {t('dashboard.history')}
-                    </TabsTrigger>
-                    <TabsTrigger value="cover-letters" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <MessageSquareText className="w-4 h-4 mr-2" />
-                        {t('dashboard.coverLetters')}
-                    </TabsTrigger>
-                    <TabsTrigger value="presentations" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <MonitorPlay className="w-4 h-4 mr-2" />
-                        {t('dashboard.presentations')}
-                    </TabsTrigger>
-                    <TabsTrigger value="linkedin" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <Linkedin className="w-4 h-4 mr-2" />
-                        {t('dashboard.linkedin')}
-                    </TabsTrigger>
-                    <TabsTrigger value="jobs" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <Briefcase className="w-4 h-4 mr-2" />
-                        {t('dashboard.findJobs')}
-                    </TabsTrigger>
-                    <TabsTrigger value="companies" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <Building2 className="w-4 h-4 mr-2" />
-                        {t('dashboard.findCompanies')}
-                    </TabsTrigger>
-                    <TabsTrigger value="analytics" className="data-[state=active]:bg-black dark:data-[state=active]:bg-white data-[state=active]:text-white dark:data-[state=active]:text-black text-black/60 dark:text-white/60 rounded-xl transition-all duration-300">
-                        <Search className="w-4 h-4 mr-2" />
-                        {t('dashboard.analytics')}
-                    </TabsTrigger>
-                </TabsList>
+  return (
+    <div className="relative mx-auto max-w-7xl space-y-8 text-zinc-950 dark:text-white">
+      {!isPro && (
+        <BlurFade delay={0.1}>
+          <div className="relative flex flex-col items-start justify-between overflow-hidden rounded-[2rem] border border-black/8 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,255,255,0.58))] p-6 shadow-[0_24px_90px_rgba(15,23,42,0.1)] ring-1 ring-black/4 md:flex-row md:items-center md:p-10 dark:border-white/10 dark:bg-[linear-gradient(135deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))] dark:shadow-[0_30px_120px_rgba(0,0,0,0.45)] dark:ring-white/5">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.85),transparent_36%),linear-gradient(135deg,transparent,rgba(255,255,255,0.35))] dark:bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_36%),linear-gradient(135deg,transparent,rgba(255,255,255,0.05))]" />
+            <div className="relative z-10">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-black/8 bg-black/[0.04] px-3 py-1 text-xs font-bold tracking-[0.24em] text-zinc-700 uppercase backdrop-blur-md dark:border-white/15 dark:bg-white/[0.08] dark:text-white/80">
+                <Sparkles className="h-3.5 w-3.5" /> OMNICV PRO
+              </div>
+              <h3 className="mb-2 text-2xl font-black tracking-tight text-zinc-950 md:text-3xl dark:text-white">
+                {t('dashboard.upgradePro')}
+              </h3>
+              <p className="max-w-xl text-sm leading-relaxed font-medium text-zinc-600 md:text-base dark:text-white/65">
+                {t('dashboard.upgradeDesc')}
+              </p>
+            </div>
+            <Button
+              asChild
+              className="relative z-10 mt-6 h-14 rounded-full border border-black/10 bg-zinc-950 px-10 text-lg font-black whitespace-nowrap text-white transition-all duration-300 hover:scale-[1.02] hover:bg-black/90 md:mt-0 dark:border-white/10 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              <Link href="/pricing">{t('dashboard.upgradeBtn')}</Link>
+            </Button>
+          </div>
+        </BlurFade>
+      )}
 
-                {error && (
-                    <div className="p-4 bg-red-100 dark:bg-red-500/10 border border-red-500/20 rounded-lg text-red-600 dark:text-red-400 text-sm font-medium">
-                        {error}
-                    </div>
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        orientation="vertical"
+        className="flex flex-col gap-8 md:flex-row"
+      >
+        {/* Sidebar Navigation */}
+        <aside className="w-full shrink-0 md:w-64">
+          <TabsList className="flex h-auto flex-col items-stretch gap-2 border-none bg-transparent p-0">
+            {TABS.map((tab) => (
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="relative z-0 flex h-13 w-full items-center justify-start rounded-2xl border border-transparent bg-transparent px-4 py-3 text-left text-zinc-500 shadow-none transition-all duration-300 hover:border-black/10 hover:bg-black/[0.03] hover:text-zinc-950 data-[state=active]:bg-transparent data-[state=active]:text-zinc-950 data-[state=active]:shadow-none dark:text-white/55 dark:hover:border-white/10 dark:hover:bg-white/[0.04] dark:hover:text-white dark:data-[state=active]:text-white"
+              >
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="activeTabPill"
+                    className="absolute inset-0 rounded-2xl border border-black/8 bg-white/72 shadow-[0_18px_50px_rgba(15,23,42,0.08)] dark:border-white/12 dark:bg-white/[0.08] dark:shadow-[0_18px_50px_rgba(0,0,0,0.32)]"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
                 )}
+                <span className="relative z-10 flex items-center">
+                  <tab.icon className="mr-3 h-5 w-5" />
+                  <span className="font-bold">{tab.label}</span>
+                </span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </aside>
 
-                {/* CREATE FROM SCRATCH TAB */}
-                <TabsContent value="create">
-                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight">{t('dashboard.startFromScratch')}</CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.builderDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="p-8 rounded-3xl bg-white/50 dark:bg-white/5 backdrop-blur-sm border border-black/5 dark:border-white/5 flex flex-col items-center justify-center text-center space-y-4 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-                                    <div className="p-5 bg-black/5 dark:bg-white/10 rounded-full">
-                                        <FileText className="w-8 h-8 text-black dark:text-white" />
-                                    </div>
+        {/* Main Content Area */}
+        <main className="min-w-0 flex-1">
+          {error && (
+            <div className="mb-6 rounded-2xl border border-red-500/25 bg-red-500/10 p-4 text-sm font-medium text-red-700 backdrop-blur-md dark:text-red-200">
+              {error}
+            </div>
+          )}
+
+          <AnimatePresence mode="wait">
+            {/* CREATE FROM SCRATCH TAB */}
+            <TabsContent value="create" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="create">
+                <Card className="liquid-glass rounded-[2rem] border border-black/8 bg-white/72 text-zinc-950 shadow-[0_24px_90px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:shadow-[0_30px_120px_rgba(0,0,0,0.42)]">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-black tracking-tight">
+                      {t('dashboard.startFromScratch')}
+                    </CardTitle>
+                    <CardDescription className="font-light text-zinc-600 dark:text-white/55">
+                      {t('dashboard.builderDesc')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                      <div className="flex flex-col items-center justify-center space-y-5 rounded-[1.75rem] border border-black/8 bg-black/[0.02] p-8 text-center backdrop-blur-sm transition-all duration-500 hover:-translate-y-1.5 hover:border-black/12 hover:bg-black/[0.04] hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.36)]">
+                        <div className="rounded-full border border-black/8 bg-white/72 p-5 shadow-[0_0_40px_rgba(15,23,42,0.06)] dark:border-white/10 dark:bg-white/10 dark:shadow-[0_0_40px_rgba(255,255,255,0.08)]">
+                          <FileText className="h-8 w-8 text-zinc-950 dark:text-white" />
+                        </div>
+                        <div>
+                          <h3 className="text-lg font-bold text-zinc-950 dark:text-white">
+                            {t('dashboard.aiWizard')}
+                          </h3>
+                          <p className="mt-2 text-sm leading-relaxed font-light text-zinc-600 dark:text-white/55">
+                            {t('dashboard.aiWizardDesc')}
+                          </p>
+                        </div>
+                        <Separator className="bg-black/8 dark:bg-white/10" />
+                        <Button
+                          className="h-12 w-full rounded-full bg-zinc-950 font-bold text-white transition-all duration-300 hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                          asChild
+                        >
+                          <Link href="/wizard">{t('dashboard.startWizard')}</Link>
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </BlurFade>
+            </TabsContent>
+
+            {/* MY CVS (HISTORY) TAB */}
+            <TabsContent value="history" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="history">
+                <HistoryTab resumes={localResumes} handleDeleteResume={handleDeleteResume} />
+              </BlurFade>
+            </TabsContent>
+
+            {/* COVER LETTERS TAB */}
+            <TabsContent value="cover-letters" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="cover-letters">
+                <CoverLettersTab coverLetters={localCoverLetters} />
+              </BlurFade>
+            </TabsContent>
+
+            {/* PRESENTATIONS TAB */}
+            <TabsContent value="presentations" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="presentations">
+                <PresentationsTab presentations={localPresentations} />
+              </BlurFade>
+            </TabsContent>
+
+            {/* LINKEDIN IMPORT TAB */}
+            <TabsContent value="linkedin" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="linkedin">
+                <Card className="liquid-glass rounded-[2rem] border border-black/8 bg-white/72 text-zinc-950 shadow-[0_24px_90px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:shadow-[0_30px_120px_rgba(0,0,0,0.42)]">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
+                      <Linkedin className="h-5 w-5" /> {t('dashboard.linkedinTitle')}
+                    </CardTitle>
+                    <CardDescription className="font-light text-zinc-600 dark:text-white/55">
+                      {t('dashboard.linkedinDesc')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <form onSubmit={handleLinkedinImport} className="max-w-xl space-y-4">
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="linkedinUrl"
+                          className="font-semibold text-zinc-700 dark:text-white/80"
+                        >
+                          {t('dashboard.linkedinUrlLabel')}
+                        </Label>
+                        <Input
+                          id="linkedinUrl"
+                          placeholder={t('dashboard.linkedinPlaceholder')}
+                          value={linkedinUrl}
+                          onChange={(e) => setLinkedinUrl(e.target.value)}
+                          className="h-14 rounded-2xl border-black/10 bg-white/82 text-zinc-950 shadow-inner shadow-black/5 transition-all duration-300 placeholder:text-zinc-400 focus-visible:border-black/20 focus-visible:ring-black/6 dark:border-white/10 dark:bg-black/35 dark:text-white dark:shadow-black/30 dark:placeholder:text-white/28 dark:focus-visible:border-white/20 dark:focus-visible:ring-white/10"
+                        />
+                      </div>
+                      <Button
+                        type="submit"
+                        disabled={isLinkedinImporting}
+                        className="h-14 w-full rounded-full bg-zinc-950 px-8 font-bold text-white transition-all duration-300 hover:bg-black/90 md:w-auto dark:bg-white dark:text-black dark:hover:bg-white/90"
+                      >
+                        {isLinkedinImporting ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Linkedin className="mr-2 h-4 w-4" />
+                        )}
+                        {t('dashboard.importConvert')}
+                      </Button>
+                    </form>
+                  </CardContent>
+                </Card>
+              </BlurFade>
+            </TabsContent>
+
+            {/* FIND JOBS TAB */}
+            <TabsContent value="jobs" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="jobs">
+                <JobSearchTab />
+              </BlurFade>
+            </TabsContent>
+
+            {/* FIND COMPANIES TAB */}
+            <TabsContent value="companies" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="companies">
+                <CompanySearchTab />
+              </BlurFade>
+            </TabsContent>
+
+            {/* ANALYTICS TAB */}
+            <TabsContent value="analytics" className="mt-0 outline-none">
+              <BlurFade delay={0.1} key="analytics">
+                <Card className="liquid-glass rounded-[2rem] border border-black/8 bg-white/72 text-zinc-950 shadow-[0_24px_90px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:shadow-[0_30px_120px_rgba(0,0,0,0.42)]">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
+                      <Search className="h-5 w-5" /> {t('dashboard.analytics')}
+                    </CardTitle>
+                    <CardDescription className="font-light text-zinc-600 dark:text-white/55">
+                      {t('dashboard.analyticsDesc')}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                      {[...localResumes, ...localCoverLetters, ...localPresentations].filter(
+                        (doc) => doc.share_enabled
+                      ).length === 0 ? (
+                        <div className="liquid-glass col-span-full rounded-[1.75rem] border border-black/8 bg-black/[0.02] py-16 text-center backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]">
+                          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-black/8 bg-white/72 dark:border-white/10 dark:bg-white/10">
+                            <FileText className="h-6 w-6 text-zinc-500 dark:text-white/50" />
+                          </div>
+                          <h3 className="mb-2 text-xl font-bold tracking-tight">
+                            {t('dashboard.noLinks')}
+                          </h3>
+                          <p className="mx-auto mb-6 max-w-sm font-light text-zinc-600 dark:text-white/55">
+                            {t('dashboard.noLinksDesc')}
+                          </p>
+                        </div>
+                      ) : (
+                        [...localResumes, ...localCoverLetters, ...localPresentations]
+                          .filter((doc) => doc.share_enabled)
+                          .map((doc) => {
+                            const isExpired = new Date() > new Date(doc.share_expires_at);
+                            let typeLabel = t('dashboard.documentType');
+                            if (doc.documentType === 'resume') typeLabel = t('dashboard.cvType');
+                            else if (doc.documentType === 'presentation')
+                              typeLabel = t('dashboard.presentationType');
+                            else if (doc.documentType === 'cover_letter')
+                              typeLabel = t('dashboard.coverLetterType');
+
+                            return (
+                              <div
+                                key={doc.id}
+                                className="flex flex-col justify-between rounded-[1.5rem] border border-black/8 bg-black/[0.02] p-6 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-black/12 hover:bg-black/[0.04] hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.36)]"
+                              >
+                                <div>
+                                  <div className="mb-2 flex items-start justify-between">
                                     <div>
-                                        <h3 className="font-bold text-lg">{t('dashboard.aiWizard')}</h3>
-                                        <p className="text-sm text-black/50 dark:text-white/50 mt-2 font-light">{t('dashboard.aiWizardDesc')}</p>
+                                      <h3 className="line-clamp-1 pr-2 text-lg font-bold text-zinc-950 dark:text-white">
+                                        {doc.title || `Untitled ${typeLabel}`}
+                                      </h3>
+                                      <span className="text-xs font-bold tracking-[0.24em] text-zinc-500 uppercase dark:text-white/45">
+                                        {typeLabel}
+                                      </span>
                                     </div>
-                                    <Button className="w-full rounded-xl h-12 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold" asChild>
-                                        <Link href="/wizard">{t('dashboard.startWizard')}</Link>
-                                    </Button>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span
+                                          className={`rounded-full border px-2.5 py-1 text-xs font-bold ${isExpired ? 'border-red-500/30 bg-red-500/10 text-red-700 dark:text-red-200' : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-100'}`}
+                                        >
+                                          {isExpired
+                                            ? t('common.expired').toUpperCase()
+                                            : t('common.active').toUpperCase()}
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="left">
+                                        {isExpired
+                                          ? t('dashboard.expires')
+                                          : t('dashboard.viewPublicLink')}
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </div>
+                                  <div className="mt-6 mb-6">
+                                    <div className="flex items-center justify-between border-b border-black/8 py-2 dark:border-white/10">
+                                      <span className="text-sm font-semibold text-zinc-500 dark:text-white/60">
+                                        {t('dashboard.totalViews')}
+                                      </span>
+                                      <CountUp to={doc.views || 0} className="text-xl font-black" />
+                                    </div>
+                                    <div className="pt-2 text-sm font-medium text-zinc-500 dark:text-white/60">
+                                      {t('dashboard.expires')}{' '}
+                                      <span className="font-bold text-zinc-950 dark:text-white">
+                                        {new Date(doc.share_expires_at).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  </div>
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* MY CVS (HISTORY) TAB */}
-                <TabsContent value="history">
-                    <HistoryTab resumes={localResumes} handleDeleteResume={handleDeleteResume} />                </TabsContent>
-
-                {/* COVER LETTERS TAB */}
-                <TabsContent value="cover-letters">
-                    <CoverLettersTab coverLetters={localCoverLetters} />                </TabsContent>
-
-                {/* PRESENTATIONS TAB */}
-                <TabsContent value="presentations">
-                    <PresentationsTab presentations={localPresentations} />                </TabsContent>
-
-                {/* LINKEDIN IMPORT TAB */}
-                <TabsContent value="linkedin">
-                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                <Linkedin className="w-5 h-5" /> {t('dashboard.linkedinTitle')}
-                            </CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.linkedinDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <form onSubmit={handleLinkedinImport} className="space-y-4 max-w-xl">
-                                <div className="space-y-2">
-                                    <Label htmlFor="linkedinUrl" className="text-black/80 dark:text-white/80 font-semibold">{t('dashboard.linkedinUrlLabel')}</Label>
-                                    <Input
-                                        id="linkedinUrl"
-                                        placeholder={t('dashboard.linkedinPlaceholder')}
-                                        value={linkedinUrl}
-                                        onChange={(e) => setLinkedinUrl(e.target.value)}
-                                        className="bg-white/50 dark:bg-black/50 backdrop-blur-sm border-black/10 dark:border-white/10 text-black dark:text-white placeholder:text-black/30 dark:placeholder:text-white/30 h-14 rounded-xl shadow-sm focus-visible:ring-black dark:focus-visible:ring-white transition-all duration-300"
-                                    />
-                                </div>
-                                <Button type="submit" disabled={isLinkedinImporting} className="bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black h-14 rounded-xl w-full md:w-auto font-bold px-8">
-                                    {isLinkedinImporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Linkedin className="w-4 h-4 mr-2" />}
-                                    {t('dashboard.importConvert')}
+                                <Button
+                                  asChild
+                                  className="h-12 w-full rounded-full bg-zinc-950 font-bold text-white transition-all duration-300 hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                                >
+                                  <Link href={`/share/${doc.share_id}`} target="_blank">
+                                    {t('dashboard.viewPublicLink')}
+                                  </Link>
                                 </Button>
-                            </form>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                {/* FIND JOBS TAB */}
-                <TabsContent value="jobs">
-                    <JobSearchTab />
-                </TabsContent>
-
-                {/* FIND COMPANIES TAB */}
-                <TabsContent value="companies">
-                    <CompanySearchTab />
-                </TabsContent>
-                {/* ANALYTICS TAB */}
-                <TabsContent value="analytics">
-                    <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
-                        <CardHeader>
-                            <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                                <Search className="w-5 h-5" /> {t('dashboard.analytics')}
-                            </CardTitle>
-                            <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                                {t('dashboard.analyticsDesc')}
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {[...localResumes, ...localCoverLetters, ...localPresentations].filter(doc => doc.share_enabled).length === 0 ? (
-                                    <div className="col-span-full py-16 text-center border border-black/5 dark:border-white/5 rounded-3xl bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-md liquid-glass">
-                                        <div className="mx-auto w-12 h-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-4">
-                                            <FileText className="w-6 h-6 text-black/50 dark:text-white/50" />
-                                        </div>
-                                        <h3 className="text-xl font-bold tracking-tight mb-2">{t('dashboard.noLinks')}</h3>
-                                        <p className="text-black/50 dark:text-white/50 font-light max-w-sm mx-auto mb-6">
-                                            {t('dashboard.noLinksDesc')}
-                                        </p>
-                                    </div>
-                                ) : (
-                                    [...localResumes, ...localCoverLetters, ...localPresentations]
-                                        .filter(doc => doc.share_enabled)
-                                        .map((doc) => {
-                                            const isExpired = new Date() > new Date(doc.share_expires_at);
-                                            let typeLabel = t('dashboard.documentType');
-                                            if (doc.documentType === 'resume') typeLabel = t('dashboard.cvType');
-                                            else if (doc.documentType === 'presentation') typeLabel = t('dashboard.presentationType');
-                                            else if (doc.documentType === 'cover_letter') typeLabel = t('dashboard.coverLetterType');
-
-                                            return (
-                                                <div key={doc.id} className="p-6 flex flex-col justify-between rounded-2xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-                                                    <div>
-                                                        <div className="flex justify-between items-start mb-2">
-                                                            <div>
-                                                                <h3 className="font-bold text-lg text-black dark:text-white line-clamp-1 pr-2">{doc.title || `Untitled ${typeLabel}`}</h3>
-                                                                <span className="text-xs font-bold text-black/50 dark:text-white/50 uppercase tracking-widest">{typeLabel}</span>
-                                                            </div>
-                                                            <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${isExpired ? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800' : 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800'}`}>
-                                                                {isExpired ? t('common.expired').toUpperCase() : t('common.active').toUpperCase()}
-                                                            </span>
-                                                        </div>
-                                                        <div className="mt-6 mb-6">
-                                                            <div className="flex justify-between items-center py-2 border-b border-black/10 dark:border-white/10">
-                                                                <span className="text-sm font-semibold text-black/60 dark:text-white/60">{t('dashboard.totalViews')}</span>
-                                                                <span className="text-xl font-black">{doc.views || 0}</span>
-                                                            </div>
-                                                            <div className="pt-2 text-sm font-medium text-black/60 dark:text-white/60">
-                                                                {t('dashboard.expires')} <span className="font-bold text-black dark:text-white">{new Date(doc.share_expires_at).toLocaleDateString()}</span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <Button asChild className="w-full rounded-xl bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12">
-                                                        <Link href={`/share/${doc.share_id}`} target="_blank">{t('dashboard.viewPublicLink')}</Link>
-                                                    </Button>
-                                                </div>
-                                            );
-                                        })
-                                )}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-            </Tabs>
-        </div>
-    )
+                              </div>
+                            );
+                          })
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </BlurFade>
+            </TabsContent>
+          </AnimatePresence>
+        </main>
+      </Tabs>
+    </div>
+  );
 }

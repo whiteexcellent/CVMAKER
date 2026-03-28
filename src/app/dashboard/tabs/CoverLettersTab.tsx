@@ -1,66 +1,82 @@
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { MessageSquareText, Plus } from 'lucide-react'
-import Link from 'next/link'
-import { useTranslation } from '@/components/I18nProvider'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { MessageSquareText, Plus } from 'lucide-react';
+import Link from 'next/link';
+import { useTranslation } from '@/components/I18nProvider';
 
 interface CoverLettersTabProps {
-    coverLetters: any[];
+  coverLetters: any[];
 }
 
 export function CoverLettersTab({ coverLetters }: CoverLettersTabProps) {
-    const { t } = useTranslation()
+  const { t } = useTranslation();
 
-    return (
-        <Card className="liquid-glass border-none shadow-xl rounded-3xl text-black dark:text-white">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle className="text-2xl font-black tracking-tight flex items-center gap-2">
-                        <MessageSquareText className="w-5 h-5" /> {t('dashboard.coverLetters')}
-                    </CardTitle>
-                    <CardDescription className="text-black/50 dark:text-white/50 font-light">
-                        {t('dashboard.coverLettersDesc')}
-                    </CardDescription>
+  return (
+    <Card className="liquid-glass rounded-[2rem] border border-black/8 bg-white/72 text-zinc-950 shadow-[0_24px_90px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:shadow-[0_30px_120px_rgba(0,0,0,0.42)]">
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="flex items-center gap-2 text-2xl font-black tracking-tight">
+            <MessageSquareText className="h-5 w-5" /> {t('dashboard.coverLetters')}
+          </CardTitle>
+          <CardDescription className="font-light text-zinc-600 dark:text-white/55">
+            {t('dashboard.coverLettersDesc')}
+          </CardDescription>
+        </div>
+        {coverLetters && coverLetters.length > 0 && (
+          <Button
+            asChild
+            className="h-12 rounded-full bg-zinc-950 px-6 font-bold text-white transition-all duration-300 hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+          >
+            <Link href="/cover-letter/new">
+              <Plus className="mr-2 h-4 w-4" />
+              {t('dashboard.createLetter')}
+            </Link>
+          </Button>
+        )}
+      </CardHeader>
+      <CardContent>
+        {coverLetters && coverLetters.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {coverLetters.map((cl) => {
+              const date = new Date(cl.created_at).toLocaleDateString();
+              return (
+                <div
+                  key={cl.id}
+                  className="flex flex-col justify-between rounded-[1.5rem] border border-black/8 bg-black/[0.02] p-6 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 hover:border-black/12 hover:bg-black/[0.04] hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.36)]"
+                >
+                  <div>
+                    <div className="mb-2 flex items-start justify-between">
+                      <h3 className="line-clamp-1 pr-2 text-lg font-bold text-zinc-950 dark:text-white">
+                        {cl.title || t('dashboard.untitledLetter')}
+                      </h3>
+                    </div>
+                    <p className="mb-4 text-sm font-medium text-zinc-600 dark:text-white/55">
+                      {t('dashboard.created')} {date}
+                    </p>
+                  </div>
+                  <Button
+                    asChild
+                    className="h-12 w-full rounded-full bg-zinc-950 font-bold text-white transition-all duration-300 hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                  >
+                    <Link href={`/cover-letter/${cl.id}`}>{t('dashboard.viewEdit')}</Link>
+                  </Button>
                 </div>
-                {coverLetters && coverLetters.length > 0 && (
-                    <Button asChild className="rounded-xl bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12 px-6">
-                        <Link href="/cover-letter/new">
-                            <Plus className="w-4 h-4 mr-2" />
-                            {t('dashboard.createLetter')}
-                        </Link>
-                    </Button>
-                )}
-            </CardHeader>
-            <CardContent>
-                {coverLetters && coverLetters.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {coverLetters.map((cl) => {
-                            const date = new Date(cl.created_at).toLocaleDateString()
-                            return (
-                                <div key={cl.id} className="p-6 flex flex-col justify-between rounded-2xl bg-white/50 dark:bg-zinc-900/50 backdrop-blur-sm border border-black/5 dark:border-white/5 hover:shadow-xl hover:-translate-y-1 transition-all duration-500">
-                                    <div>
-                                        <div className="flex justify-between items-start mb-2">
-                                            <h3 className="font-bold text-lg text-black dark:text-white line-clamp-1 pr-2">{cl.title || t('dashboard.untitledLetter')}</h3>
-                                        </div>
-                                        <p className="text-sm font-medium text-black/50 dark:text-white/50 mb-4">{t('dashboard.created')} {date}</p>
-                                    </div>
-                                    <Button asChild className="w-full rounded-xl bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold h-12">
-                                        <Link href={`/cover-letter/${cl.id}`}>{t('dashboard.viewEdit')}</Link>
-                                    </Button>
-                                </div>
-                            )
-                        })}
-                    </div>
-                ) : (
-                    <div className="p-12 text-center rounded-3xl bg-slate-50/50 dark:bg-zinc-900/50 backdrop-blur-md border border-black/5 dark:border-white/5 liquid-glass">
-                        <h3 className="font-bold text-xl mb-2">{t('dashboard.noLetters')}</h3>
-                        <p className="text-black/50 dark:text-white/50 mb-6">{t('dashboard.noLettersDesc')}</p>
-                        <Button asChild className="rounded-xl h-12 px-6 bg-black hover:bg-black/80 dark:bg-white dark:hover:bg-white/90 text-white dark:text-black font-bold border-0 shadow-lg">
-                            <Link href="/cover-letter/new">{t('dashboard.createLetter')}</Link>
-                        </Button>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    )
+              );
+            })}
+          </div>
+        ) : (
+          <div className="liquid-glass rounded-[1.75rem] border border-black/8 bg-black/[0.02] p-12 text-center backdrop-blur-md dark:border-white/10 dark:bg-white/[0.04]">
+            <h3 className="mb-2 text-xl font-bold">{t('dashboard.noLetters')}</h3>
+            <p className="mb-6 text-zinc-600 dark:text-white/55">{t('dashboard.noLettersDesc')}</p>
+            <Button
+              asChild
+              className="h-12 rounded-full border-0 bg-zinc-950 px-6 font-bold text-white shadow-lg transition-all duration-300 hover:bg-black/90 dark:bg-white dark:text-black dark:hover:bg-white/90"
+            >
+              <Link href="/cover-letter/new">{t('dashboard.createLetter')}</Link>
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

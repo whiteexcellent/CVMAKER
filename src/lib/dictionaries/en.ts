@@ -1,4 +1,4 @@
-export const en = {
+﻿export const en = {
     dashboard: {
         title: 'Dashboard',
         coverLetters: 'Cover Letters',
@@ -122,7 +122,7 @@ export const en = {
         chatPlaceholder: 'Type a message...'
     },
     cvDetail: {
-        backToDashboard: '← Back to Dashboard',
+        backToDashboard: 'â† Back to Dashboard',
         cvPreview: 'CV Preview:'
     },
     error: {
@@ -197,7 +197,7 @@ export const en = {
         checkEmailDesc: 'We\'ve sent a magic link to your email address. Click the link to log in securely.',
         safelyClose: 'You can safely close this window.',
         returnHome: 'Return to Home',
-        devMode: 'Dev Mode — Password Login',
+        devMode: 'Dev Mode â€” Password Login',
         signInPassword: 'Sign in with Password'
     },
     landing: {
@@ -296,3 +296,4 @@ export const en = {
         transactionDesc: 'Your transaction has been securely processed.'
     }
 };
+

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { z } from 'zod';
 
 import { createClient } from '@/lib/supabase/server';
+import { getSiteUrl } from '@/lib/env';
 import { enforceRateLimit } from '@/lib/rate-limit';
 import { getRateLimitIdentifier, parseJsonBody, RequestGuardError } from '@/lib/request-guards';
 
@@ -13,7 +14,8 @@ const GROQ_BASE_URL = 'https://api.groq.com/openai/v1/chat/completions';
 const OPENROUTER_FREE_MODEL = 'deepseek/deepseek-chat-v3-0324:free';
 const OPENROUTER_PRO_MODEL = 'deepseek/deepseek-r1:free';
 const GROQ_FALLBACK_MODEL = 'llama-3.3-70b-versatile';
-const OPENROUTER_FALLBACK_STATUSES = new Set([402, 429, 503, 529]);
+const PROVIDER_TIMEOUT_MS = 30_000;
+const FALLBACK_FRIENDLY_ERROR = 'AI assistant is temporarily unavailable. Please try again.';
 
 const STEP_LABELS: Record<number, string> = {
     1: 'Trajectory / Target Role',
@@ -51,6 +53,17 @@ const assistantResponseSchema = z.object({
         confidence: z.number().min(0).max(1),
     })).max(3).default([]),
 });
+
+type AssistantResponse = z.infer<typeof assistantResponseSchema>;
+type ProviderName = 'openrouter' | 'groq';
+type ProviderAttemptResult = {
+    provider: ProviderName;
+    status?: number;
+    parseStrategy?: 'json' | 'text-wrap';
+    payload?: AssistantResponse;
+    errorCode?: 'http_error' | 'network_error' | 'empty_response' | 'parse_error';
+    errorMessage?: string;
+};
 
 function buildSystemPrompt(
     step: number,
@@ -114,7 +127,7 @@ async function callJsonProvider(
             temperature: 0.3,
             response_format: { type: 'json_object' },
         }),
-        signal: AbortSignal.timeout(30_000),
+        signal: AbortSignal.timeout(PROVIDER_TIMEOUT_MS),
     });
 
     return response;
@@ -123,6 +136,224 @@ async function callJsonProvider(
 async function parseProviderResponse(response: Response) {
     const payload = await response.json() as any;
     return payload?.choices?.[0]?.message?.content || '{}';
+}
+
+function extractJsonObject(raw: string): string | null {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        return null;
+    }
+
+    const fencedMatch = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    const candidate = (fencedMatch?.[1] || trimmed).trim();
+
+    if (candidate.startsWith('{') && candidate.endsWith('}')) {
+        return candidate;
+    }
+
+    const start = candidate.indexOf('{');
+    if (start === -1) {
+        return null;
+    }
+
+    let depth = 0;
+    let inString = false;
+    let isEscaped = false;
+
+    for (let i = start; i < candidate.length; i += 1) {
+        const char = candidate[i];
+
+        if (isEscaped) {
+            isEscaped = false;
+            continue;
+        }
+
+        if (char === '\\' && inString) {
+            isEscaped = true;
+            continue;
+        }
+
+        if (char === '"') {
+            inString = !inString;
+            continue;
+        }
+
+        if (inString) {
+            continue;
+        }
+
+        if (char === '{') {
+            depth += 1;
+        } else if (char === '}') {
+            depth -= 1;
+
+            if (depth === 0) {
+                return candidate.slice(start, i + 1);
+            }
+        }
+    }
+
+    return null;
+}
+
+function normalizeTextResponse(raw: string): string | null {
+    const trimmed = raw
+        .replace(/```(?:json)?/gi, '')
+        .replace(/```/g, '')
+        .trim();
+
+    if (!trimmed) {
+        return null;
+    }
+
+    if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        return null;
+    }
+
+    return trimmed.slice(0, 4_000);
+}
+
+function parseAssistantPayload(raw: string): { payload?: AssistantResponse; parseStrategy?: 'json' | 'text-wrap'; errorMessage?: string } {
+    const extractedJson = extractJsonObject(raw);
+
+    if (extractedJson) {
+        try {
+            return {
+                payload: assistantResponseSchema.parse(JSON.parse(extractedJson)),
+                parseStrategy: 'json',
+            };
+        } catch (error) {
+            const normalizedText = normalizeTextResponse(raw);
+            if (normalizedText) {
+                return {
+                    payload: {
+                        message: normalizedText,
+                        suggestions: [],
+                    },
+                    parseStrategy: 'text-wrap',
+                };
+            }
+
+            return {
+                errorMessage: error instanceof Error ? error.message : 'Invalid JSON payload',
+            };
+        }
+    }
+
+    const normalizedText = normalizeTextResponse(raw);
+    if (normalizedText) {
+        return {
+            payload: {
+                message: normalizedText,
+                suggestions: [],
+            },
+            parseStrategy: 'text-wrap',
+        };
+    }
+
+    return { errorMessage: 'No usable assistant payload found' };
+}
+
+function logProviderAttempt(
+    userId: string,
+    step: number,
+    locale: string | undefined,
+    attempt: ProviderAttemptResult,
+) {
+    const baseMeta = {
+        route: 'wizard_chat',
+        provider: attempt.provider,
+        userId,
+        step,
+        locale: locale || 'English',
+        status: attempt.status,
+        parseStrategy: attempt.parseStrategy,
+        errorCode: attempt.errorCode,
+        errorMessage: attempt.errorMessage,
+    };
+
+    if (attempt.payload) {
+        console.info('[AI][wizard-chat] Provider succeeded', baseMeta);
+        return;
+    }
+
+    console.warn('[AI][wizard-chat] Provider failed', baseMeta);
+}
+
+async function attemptProvider(params: {
+    provider: ProviderName;
+    url: string;
+    apiKey?: string;
+    model: string;
+    messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>;
+    extraHeaders?: Record<string, string>;
+    userId: string;
+    step: number;
+    locale?: string;
+}): Promise<ProviderAttemptResult | null> {
+    if (!params.apiKey) {
+        return null;
+    }
+
+    try {
+        const response = await callJsonProvider(params.url, params.apiKey, {
+            model: params.model,
+            messages: params.messages,
+            extraHeaders: params.extraHeaders,
+        });
+
+        if (!response.ok) {
+            const attempt: ProviderAttemptResult = {
+                provider: params.provider,
+                status: response.status,
+                errorCode: 'http_error',
+                errorMessage: `Provider returned HTTP ${response.status}`,
+            };
+            logProviderAttempt(params.userId, params.step, params.locale, attempt);
+            return attempt;
+        }
+
+        const rawAssistantResponse = await parseProviderResponse(response);
+        if (!rawAssistantResponse || !rawAssistantResponse.trim()) {
+            const attempt: ProviderAttemptResult = {
+                provider: params.provider,
+                status: response.status,
+                errorCode: 'empty_response',
+                errorMessage: 'Provider returned an empty response payload',
+            };
+            logProviderAttempt(params.userId, params.step, params.locale, attempt);
+            return attempt;
+        }
+
+        const parsed = parseAssistantPayload(rawAssistantResponse);
+        if (parsed.payload) {
+            const attempt: ProviderAttemptResult = {
+                provider: params.provider,
+                status: response.status,
+                parseStrategy: parsed.parseStrategy,
+                payload: parsed.payload,
+            };
+            logProviderAttempt(params.userId, params.step, params.locale, attempt);
+            return attempt;
+        }
+
+        const attempt: ProviderAttemptResult = {
+            provider: params.provider,
+            status: response.status,
+            errorCode: 'parse_error',
+            errorMessage: parsed.errorMessage || 'Assistant payload could not be normalized',
+        };
+        logProviderAttempt(params.userId, params.step, params.locale, attempt);
+        return attempt;
+    } catch (error) {
+        const attempt: ProviderAttemptResult = {
+            provider: params.provider,
+            errorCode: 'network_error',
+            errorMessage: error instanceof Error ? error.message : 'Unknown network error',
+        };
+        logProviderAttempt(params.userId, params.step, params.locale, attempt);
+        return attempt;
+    }
 }
 
 export async function POST(req: Request): Promise<Response> {
@@ -172,85 +403,86 @@ export async function POST(req: Request): Promise<Response> {
 
         const openrouterKey = process.env.OPENROUTER_API_KEY;
         const groqKey = process.env.GROQ_API_KEY;
+        const providerAttempts: ProviderAttemptResult[] = [];
+        const siteUrl = getSiteUrl();
 
-        let rawAssistantResponse: string | null = null;
-
-        if (openrouterKey) {
-            try {
-                const orModel = isPro ? OPENROUTER_PRO_MODEL : OPENROUTER_FREE_MODEL;
-                const openRouterResponse = await callJsonProvider(
-                    OPENROUTER_BASE_URL,
-                    openrouterKey,
-                    {
-                        model: orModel,
-                        messages: apiMessages,
-                        extraHeaders: {
-                            'HTTP-Referer': 'https://cvmaker-beta.vercel.app',
-                            'X-Title': 'OmniCV Assistant',
-                        }
-                    }
-                );
-
-                if (openRouterResponse.ok) {
-                    rawAssistantResponse = await parseProviderResponse(openRouterResponse);
-                } else if (!OPENROUTER_FALLBACK_STATUSES.has(openRouterResponse.status)) {
-                    return NextResponse.json(
-                        { error: { code: 'PROVIDER_ERROR', message: 'AI provider error', retryable: true } },
-                        { status: 502 },
-                    );
-                }
-            } catch (error) {
-                console.warn('[AI] OpenRouter failed, falling back to Groq:', error);
-            }
+        const openRouterAttempt = await attemptProvider({
+            provider: 'openrouter',
+            url: OPENROUTER_BASE_URL,
+            apiKey: openrouterKey,
+            model: isPro ? OPENROUTER_PRO_MODEL : OPENROUTER_FREE_MODEL,
+            messages: apiMessages,
+            extraHeaders: {
+                'HTTP-Referer': siteUrl,
+                'X-Title': 'OmniCV Assistant',
+            },
+            userId: user.id,
+            step,
+            locale,
+        });
+        if (openRouterAttempt) {
+            providerAttempts.push(openRouterAttempt);
         }
 
-        if (!rawAssistantResponse && groqKey) {
-            try {
-                const groqResponse = await callJsonProvider(
-                    GROQ_BASE_URL,
-                    groqKey,
-                    {
-                        model: GROQ_FALLBACK_MODEL,
-                        messages: apiMessages,
-                    }
-                );
+        const groqAttempt = !openRouterAttempt?.payload
+            ? await attemptProvider({
+                provider: 'groq',
+                url: GROQ_BASE_URL,
+                apiKey: groqKey,
+                model: GROQ_FALLBACK_MODEL,
+                messages: apiMessages,
+                userId: user.id,
+                step,
+                locale,
+            })
+            : null;
 
-                if (!groqResponse.ok) {
-                    return NextResponse.json(
-                        { error: { code: 'PROVIDER_ERROR', message: 'AI provider unavailable', retryable: true } },
-                        { status: 502 },
-                    );
-                }
+        if (groqAttempt) {
+            providerAttempts.push(groqAttempt);
+        }
 
-                rawAssistantResponse = await parseProviderResponse(groqResponse);
-            } catch (error) {
-                console.error('[AI] Groq network error:', error);
+        const successfulAttempt = providerAttempts.find((attempt) => attempt.payload);
+
+        if (!successfulAttempt?.payload) {
+            const hasAnyProviderConfigured = Boolean(openrouterKey || groqKey);
+            const encounteredNetworkOnlyFailure =
+                providerAttempts.length > 0 &&
+                providerAttempts.every((attempt) => attempt.errorCode === 'network_error');
+
+            if (!hasAnyProviderConfigured) {
                 return NextResponse.json(
-                    { error: { code: 'PROVIDER_TIMEOUT', message: 'AI provider timed out', retryable: true } },
+                    { error: { code: 'NO_PROVIDER', message: 'No AI provider available', retryable: false } },
+                    { status: 503 },
+                );
+            }
+
+            if (encounteredNetworkOnlyFailure) {
+                return NextResponse.json(
+                    { error: { code: 'PROVIDER_TIMEOUT', message: FALLBACK_FRIENDLY_ERROR, retryable: true } },
                     { status: 504 },
                 );
             }
-        }
 
-        if (!rawAssistantResponse) {
-            return NextResponse.json(
-                { error: { code: 'NO_PROVIDER', message: 'No AI provider available', retryable: false } },
-                { status: 503 },
-            );
-        }
+            console.error('[AI][wizard-chat] All providers failed', {
+                route: 'wizard_chat',
+                userId: user.id,
+                step,
+                locale: locale || 'English',
+                attempts: providerAttempts.map((attempt) => ({
+                    provider: attempt.provider,
+                    status: attempt.status,
+                    errorCode: attempt.errorCode,
+                    parseStrategy: attempt.parseStrategy,
+                })),
+            });
 
-        let parsedAssistantResponse;
-        try {
-            parsedAssistantResponse = assistantResponseSchema.parse(JSON.parse(rawAssistantResponse));
-        } catch (error) {
-            console.error('[AI] Structured response parsing failed:', rawAssistantResponse, error);
             return NextResponse.json(
-                { error: { code: 'STRUCTURED_OUTPUT_ERROR', message: 'Assistant returned an invalid structure', retryable: true } },
+                { error: { code: 'PROVIDER_ERROR', message: FALLBACK_FRIENDLY_ERROR, retryable: true } },
                 { status: 502 },
             );
         }
 
-        return NextResponse.json(parsedAssistantResponse);
+        return NextResponse.json(successfulAttempt.payload);
     } catch (error: unknown) {
         if (error instanceof RequestGuardError) {
             return NextResponse.json(
