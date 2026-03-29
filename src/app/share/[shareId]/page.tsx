@@ -8,7 +8,7 @@ import { createSignedPdfUrl } from '@/lib/pdf';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ViewTracker from './ViewTracker';
-import PDFExportButton from '../../cv/[id]/PDFExportButton';
+import PDFExportButton from '../../(dashboard)/cv/[id]/PDFExportButton';
 
 type SharedDocument = {
     id: string;
@@ -75,37 +75,44 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
 
     if (isExpired) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
-                <Card className="max-w-md w-full shadow-2xl border-primary/20 bg-background/60 backdrop-blur-xl">
-                    <CardHeader className="text-center space-y-4">
-                        <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                            <Lock className="w-8 h-8 text-primary" />
-                        </div>
-                        <CardTitle className="text-2xl">Link Expired</CardTitle>
-                        <CardDescription className="text-base">
-                            The 7-day sharing period for this document has ended.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6 pt-2">
-                        <div className="bg-muted p-4 rounded-lg space-y-3">
-                            <h4 className="font-semibold text-sm flex items-center gap-2">
-                                <FileText className="w-4 h-4 text-primary" />
-                                Owner Access Required
-                            </h4>
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                If you are the owner of this {docType === 'resume' ? 'CV' : docType === 'presentation' ? 'presentation' : 'cover letter'}, you must upgrade your account to unlock permanent links and analytics.
+            <div className="relative flex min-h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-white selection:bg-orange-500/20">
+                {/* Ambient Background Glows */}
+                <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#fb923c]/20 to-transparent blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-0 -right-[20%] w-[800px] h-[800px] bg-gradient-to-tl from-[#fb923c]/15 to-transparent rounded-full blur-[150px] pointer-events-none" />
+
+                <div className="relative z-10 flex w-full flex-1 items-center justify-center p-6">
+                    <div className="relative w-full max-w-md group">
+                        <div className="absolute -inset-[2px] rounded-[24px] z-0 blur-[20px] opacity-60 bg-[size:200%_200%] bg-gradient-to-r from-red-500/40 via-transparent to-[#fb923c]/40 pointer-events-none" />
+                        
+                        <div className="relative rounded-3xl border border-white/10 bg-black/60 p-10 shadow-2xl backdrop-blur-2xl z-10 text-center">
+                            <div className="mb-6 flex mx-auto h-20 w-20 items-center justify-center rounded-full bg-gradient-to-tr from-red-500/20 to-[#fb923c]/20 border border-white/10">
+                                <Lock className="h-10 w-10 text-[#fb923c]" />
+                            </div>
+                            <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Link Expired</h1>
+                            <p className="text-sm text-zinc-400 mb-8">
+                                The 7-day sharing period for this document has ended.
                             </p>
-                        </div>
-                        <Button className="w-full text-md font-semibold h-12" asChild>
-                            <Link href="/pricing">View Upgrade Options</Link>
-                        </Button>
-                        <div className="text-center">
-                            <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors">
-                                Powered by OmniCV Maker
+                            
+                            <div className="bg-white/5 p-5 rounded-2xl border border-white/5 mb-8 text-left">
+                                <h4 className="font-semibold text-sm flex items-center gap-2 text-white mb-2">
+                                    <FileText className="w-4 h-4 text-[#fb923c]" />   
+                                    Owner Access Required
+                                </h4>
+                                <p className="text-xs text-zinc-400 leading-relaxed">
+                                    If you are the owner of this {docType === 'resume' ? 'CV' : docType === 'presentation' ? 'presentation' : 'cover letter'}, you must upgrade your account to unlock permanent links and analytics.
+                                </p>
+                            </div>
+
+                            <Link href="/pricing" className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-8 py-4 font-bold text-black transition-transform hover:-translate-y-1 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)] shadow-lg mb-6">
+                                View Upgrade Options
+                            </Link>
+                            
+                            <Link href="/" className="text-xs text-zinc-500 hover:text-white transition-colors">
+                                Powered by OMNICV
                             </Link>
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                </div>
             </div>
         );
     }
@@ -129,17 +136,20 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
         : null;
 
     return (
-        <div className="min-h-screen bg-muted/20 pb-24">
+        <div className="relative flex min-h-screen flex-col overflow-hidden bg-zinc-950 font-sans text-white selection:bg-orange-500/20 pb-24">
+            <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#34d399]/20 to-transparent blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[800px] h-[800px] bg-gradient-to-tl from-[#fb923c]/15 to-transparent rounded-full blur-[150px] pointer-events-none" />
+
             <ViewTracker shareId={shareId} />
 
-            <div className="bg-primary text-primary-foreground text-center py-2 text-sm font-medium flex items-center justify-center gap-2">
-                <CheckCircle2 className="w-4 h-4" />
-                Verified active document generated via OmniCV
+            <div className="bg-white/5 border-b border-white/10 text-zinc-300 text-center py-3 text-sm font-medium flex items-center justify-center gap-2 backdrop-blur-md relative z-20">
+                <CheckCircle2 className="w-4 h-4 text-[#4ade80]" />
+                <span className="tracking-wide">Verified active document generated via <strong className="text-white">OMNICV</strong></span>
             </div>
 
-            <main className="max-w-4xl mx-auto mt-8 p-4">
+            <main className="max-w-4xl mx-auto mt-12 p-4 relative z-10 w-full">
                 {docType === 'resume' && (
-                    <div className="flex justify-end mb-4">
+                    <div className="flex justify-end mb-6">
                         <PDFExportButton
                             pdfUrl={signedPdfUrl}
                             userFullName={(resumeContent as any)?.targetRole || docRenderData.title || 'Professional Resume'}
@@ -147,8 +157,11 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                     </div>
                 )}
 
-                <Card className="w-full bg-background shadow-xl rounded-xl overflow-hidden border-muted">
-                    {docType === 'resume' && resumeContent && (
+                <div className="relative w-full group">
+                    <div className="absolute -inset-[2px] rounded-3xl opacity-50 blur-xl transition duration-1000 group-hover:duration-200 pointer-events-none bg-gradient-to-r from-[#34d399]/30 via-transparent to-[#fb923c]/30" />
+                    
+                    <Card className="relative w-full rounded-[2.5rem] bg-white/95 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.08)] backdrop-blur-3xl border border-black/5 sm:p-12 dark:border-white/10 dark:bg-[#0a0a0a]/95 dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-all duration-300">
+                        {docType === 'resume' && resumeContent && (
                         <div className="p-10 space-y-8">
                             <div className="border-b pb-6 text-center">
                                 <h1 className="text-4xl font-extrabold tracking-tight mb-2 text-foreground">
@@ -263,6 +276,7 @@ export default async function SharedDocumentPage({ params }: { params: Promise<{
                         </div>
                     )}
                 </Card>
+                </div>
             </main>
         </div>
     );

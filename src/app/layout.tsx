@@ -42,9 +42,9 @@ export default async function RootLayout({
   const initialDictionary = await getDictionary(initialLocale);
 
   return (
-    <html lang={initialLocale} suppressHydrationWarning className={cn("font-sans", inter.variable)}>
+    <html lang={initialLocale} suppressHydrationWarning className={`${inter.variable} ${geistSans.variable} ${spaceGrotesk.variable}`}>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${spaceGrotesk.variable} antialiased`}
+        className={`${inter.className} antialiased`}
       >
         <I18nProvider initialLocale={initialLocale} initialDictionary={initialDictionary}>
           <ThemeProvider

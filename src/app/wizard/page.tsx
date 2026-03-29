@@ -1,9 +1,12 @@
-'use client';
+"use client";
+
+
+
+
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -24,7 +27,7 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import Link from 'next/link';
 import { createBrowserClient } from '@supabase/ssr';
 import { AIChatSidebar } from '@/components/wizard/AIChatSidebar';
-import { Particles } from '@/components/ui/particles';
+import { InteractiveGridPattern } from '@/components/ui/interactive-grid-pattern';
 import { WizardStep1 } from './steps/WizardStep1';
 import { WizardStep2 } from './steps/WizardStep2';
 import { WizardStep3 } from './steps/WizardStep3';
@@ -268,94 +271,125 @@ export default function WizardPage() {
       </div>
     </div>
   ) : (
-    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#f6f2ea] font-sans text-zinc-950 transition-colors duration-300 selection:bg-black/10 dark:bg-[#020202] dark:text-white dark:selection:bg-white/20">
-      <div className="pointer-events-none absolute inset-0">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.92),transparent_32%),radial-gradient(circle_at_78%_20%,rgba(255,255,255,0.62),transparent_24%),linear-gradient(180deg,#fbf8f2_0%,#f3ede3_50%,#ece4d7_100%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.14),transparent_32%),radial-gradient(circle_at_78%_20%,rgba(255,255,255,0.08),transparent_24%),linear-gradient(180deg,#050505_0%,#020202_50%,#000_100%)]" />
-        <div className="absolute top-16 left-[-8%] h-80 w-80 rounded-full bg-black/[0.05] blur-[140px] dark:bg-white/8" />
-        <div className="absolute right-[-8%] bottom-[-10%] h-[26rem] w-[26rem] rounded-full bg-black/[0.04] blur-[180px] dark:bg-white/7" />
-        <div className="absolute inset-0 [background-image:linear-gradient(rgba(24,24,27,0.08)_1px,transparent_1px),linear-gradient(90deg,rgba(24,24,27,0.08)_1px,transparent_1px)] [background-size:96px_96px] opacity-[0.06] dark:[background-image:linear-gradient(rgba(255,255,255,0.14)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.14)_1px,transparent_1px)]" />
-        <Particles
-          className="absolute inset-0 opacity-25"
-          quantity={36}
-          ease={70}
-          size={0.9}
-          color="#8f8f8f"
-          refresh
+    <div className="relative flex min-h-screen flex-col overflow-hidden bg-[#fafafa] font-sans text-zinc-950 transition-colors duration-300 selection:bg-orange-500/20 dark:bg-[#050505] dark:text-white dark:selection:bg-green-500/20">       
+      <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 bg-[#fafafa] dark:bg-[#050505] pointer-events-none" />     
+
+        {/* Soft Orange + Green Ambient Glow Background */}
+        <div className="absolute top-[-10%] left-[-10%] h-[60%] w-[60%] rounded-full bg-orange-500/10 blur-[140px] mix-blend-multiply dark:bg-orange-500/10 dark:mix-blend-screen pointer-events-none" />
+        <div className="absolute bottom-[-10%] right-[-10%] h-[60%] w-[60%] rounded-full bg-green-500/10 blur-[140px] mix-blend-multiply dark:bg-green-500/10 dark:mix-blend-screen pointer-events-none" />
+        <div className="absolute top-[40%] left-[30%] h-[40%] w-[40%] rounded-full bg-orange-400/5 blur-[120px] mix-blend-multiply dark:bg-orange-400/5 dark:mix-blend-screen pointer-events-none" />
+
+        <svg aria-hidden="true" className="pointer-events-none absolute inset-0 h-0 w-0">
+          <defs>
+            <linearGradient id="orangeGreenMix" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="#22c55e" />
+            </linearGradient>
+            <linearGradient id="orangeGreenMixDark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#fb923c" />
+              <stop offset="100%" stopColor="#4ade80" />
+            </linearGradient>
+          </defs>
+        </svg>
+
+        <InteractiveGridPattern
+          className="absolute inset-0 opacity-100 mix-blend-multiply dark:mix-blend-screen"
+          width={40}
+          height={40}
+          squares={[48, 48]}
+          squaresClassName="hover:fill-[url(#orangeGreenMix)] duration-500 ease-out dark:hover:fill-[url(#orangeGreenMixDark)] transition-all"
         />
       </div>
 
-      <header className="sticky top-0 z-50 flex items-center justify-between border-b border-black/8 bg-white/58 px-4 py-4 backdrop-blur-2xl supports-[backdrop-filter]:bg-white/48 sm:px-6 dark:border-white/10 dark:bg-black/45 dark:supports-[backdrop-filter]:bg-black/35">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/"
-            className="inline-flex items-center rounded-full border border-black/8 bg-black/[0.03] px-4 py-2 text-sm font-semibold tracking-[0.22em] text-zinc-900 uppercase transition-all duration-300 hover:border-black/12 hover:bg-black/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white/85 dark:hover:border-white/20 dark:hover:bg-white/[0.08]"
-          >
-            OMNICV
-          </Link>
-          <div className="hidden rounded-full border border-black/8 bg-white/60 px-4 py-2 text-sm font-semibold text-zinc-600 sm:block dark:border-white/10 dark:bg-white/[0.04] dark:text-white/70">
-            {t('wizard.step')} {step} {t('wizard.of')} {totalSteps}
+      <div className="pointer-events-none pt-4 px-4 sm:px-6 w-full max-w-5xl mx-auto z-50 sticky top-4">
+        <header className="pointer-events-auto flex items-center justify-between rounded-full border border-black/5 bg-white/70 px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.04)] backdrop-blur-2xl supports-[backdrop-filter]:bg-white/60 dark:border-white/10 dark:bg-black/50 dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] dark:supports-[backdrop-filter]:bg-black/40">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="inline-flex items-center rounded-full border border-orange-500/20 bg-orange-500/5 px-4 py-2 text-sm font-semibold tracking-[0.22em] text-orange-600 uppercase transition-all duration-300 hover:bg-orange-500/10 dark:border-green-500/20 dark:bg-green-500/10 dark:text-green-400 dark:hover:bg-green-500/20"
+            >
+              OMNICV
+            </Link>
+            <div className="hidden rounded-full border border-black/5 bg-white/60 px-4 py-2 text-sm font-bold text-zinc-600 sm:block dark:border-white/10 dark:bg-white/5 dark:text-white/70">
+              {t('wizard.step')} {step} {t('wizard.of')} {totalSteps}
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="hidden items-center rounded-full border border-black/8 bg-black/[0.03] p-1 backdrop-blur-xl sm:flex dark:border-white/10 dark:bg-white/[0.04]">
-            <LanguageToggle />
-            <ThemeToggle />
+          <div className="flex items-center gap-3">
+            <div className="hidden items-center rounded-full border border-black/5 bg-white/60 p-1 backdrop-blur-xl sm:flex dark:border-white/10 dark:bg-white/5">
+              <LanguageToggle />
+              <ThemeToggle />
+            </div>
+            <Button
+              variant={isAISidebarOpen ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setIsAISidebarOpen((prev) => !prev)}
+              className={`flex h-11 items-center gap-2 rounded-full px-6 font-bold transition-all duration-300 ${
+                isAISidebarOpen
+                  ? 'border-transparent bg-gradient-to-r from-orange-500 to-green-500 text-white shadow-lg hover:opacity-90'
+                  : 'border-black/5 bg-white/60 text-zinc-900 hover:bg-black/5 dark:border-white/10 dark:bg-white/5 dark:text-white dark:hover:bg-white/10'
+              }`}
+              aria-label="Toggle AI Assistant"
+            >
+              <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline">{t('wizard.aiAssistant') || 'AI Assistant'}</span>
+            </Button>
           </div>
-          <Button
-            variant={isAISidebarOpen ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setIsAISidebarOpen((prev) => !prev)}
-            className={`flex h-11 items-center gap-2 rounded-full px-5 font-bold transition-all duration-300 ${
-              isAISidebarOpen
-                ? 'border-black/10 bg-zinc-950 text-white hover:bg-black/90 dark:border-white/10 dark:bg-white dark:text-black dark:hover:bg-white/90'
-                : 'border-black/8 bg-black/[0.03] text-zinc-900 hover:bg-black/[0.05] dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/[0.08]'
-            }`}
-            aria-label="Toggle AI Assistant"
-          >
-            <Bot className="h-4 w-4" />
-            <span className="hidden sm:inline">{t('wizard.aiAssistant') || 'AI Assistant'}</span>
-          </Button>
-        </div>
-      </header>
+        </header>
 
-      <Progress
-        value={progressPercentage}
-        className="relative z-10 h-1.5 w-full rounded-none bg-black/5 transition-all duration-300 dark:bg-white/5 [&>div]:bg-zinc-950 dark:[&>div]:bg-white"
-      />
+        <Progress
+          value={progressPercentage}
+          className="pointer-events-none absolute left-0 right-0 top-full mt-4 h-1.5 w-full rounded-full bg-black/5 transition-all duration-300 dark:bg-white/5 [&>div]:bg-gradient-to-r [&>div]:from-orange-500 [&>div]:to-green-500"
+        />
+      </div>
 
-      <div className="relative z-10 flex flex-1">
-        <main className="flex flex-1 flex-col items-center px-4 py-10 sm:px-6 lg:py-12">
-          <div className="relative w-full max-w-3xl transition-all duration-300">
-            <Card className="liquid-glass w-full overflow-hidden rounded-[2rem] border border-black/8 bg-white/72 shadow-[0_24px_90px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:shadow-[0_30px_120px_rgba(0,0,0,0.45)]">
-              {step === 1 && (
-                <WizardStep1
-                  linkedinUrl={linkedinUrl}
-                  setLinkedinUrl={setLinkedinUrl}
-                  isImporting={isImporting}
-                  handleLinkedInImport={handleLinkedInImport}
-                  formData={formData}
-                  setFormData={setFormData}
-                  jobUrl={jobUrl}
-                  setJobUrl={setJobUrl}
-                  isScrapingJob={isScrapingJob}
-                  handleScraping={handleScraping}
-                />
-              )}
+      <div className="relative z-10 flex flex-1 pointer-events-none">
+        <main className="pointer-events-none flex flex-1 flex-col items-center px-4 py-8 sm:px-6 lg:py-12 mt-6">
+          <div className="pointer-events-auto relative w-full max-w-[46rem] mb-20 group">
+            {/* Main content ambient glow */}
+            <div className="absolute -inset-0.5 z-0 rounded-[3rem] bg-gradient-to-br from-orange-500/30 via-transparent to-green-500/30 blur-2xl opacity-50 dark:from-orange-400/20 dark:to-green-400/20 transition-opacity duration-500 group-hover:opacity-80" />
+            
+            <div className="relative z-10 w-full rounded-[2.5rem] bg-white/95 p-6 shadow-[0_8px_40px_rgba(0,0,0,0.08)] backdrop-blur-3xl border border-black/5 sm:p-12 dark:border-white/10 dark:bg-[#0a0a0a]/95 dark:shadow-[0_8px_40px_rgba(0,0,0,0.4)] transition-all duration-300">
+              <div className="w-full">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={step}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {step === 1 && (
+                    <WizardStep1
+                      linkedinUrl={linkedinUrl}
+                      setLinkedinUrl={setLinkedinUrl}
+                      isImporting={isImporting}
+                      handleLinkedInImport={handleLinkedInImport}
+                      formData={formData}
+                      setFormData={setFormData}
+                      jobUrl={jobUrl}
+                      setJobUrl={setJobUrl}
+                      isScrapingJob={isScrapingJob}
+                      handleScraping={handleScraping}
+                    />
+                  )}
 
-              {step === 2 && <WizardStep2 formData={formData} setFormData={setFormData} />}
+                  {step === 2 && <WizardStep2 formData={formData} setFormData={setFormData} />}
 
-              {step === 3 && <WizardStep3 formData={formData} setFormData={setFormData} />}
+                  {step === 3 && <WizardStep3 formData={formData} setFormData={setFormData} />}
 
-              {step === 4 && <WizardStep4 formData={formData} setFormData={setFormData} />}
+                  {step === 4 && <WizardStep4 formData={formData} setFormData={setFormData} />}
+                </motion.div>
+              </AnimatePresence>
 
-              <div className="flex items-center justify-between border-t border-black/8 bg-black/[0.03] p-6 backdrop-blur-xl dark:border-white/10 dark:bg-black/10">
+              <div className="mt-12 flex flex-col-reverse items-center justify-between gap-4 border-t border-black/5 pt-8 sm:flex-row dark:border-white/5">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={handlePrev}
                   disabled={step === 1}
-                  className="h-12 rounded-full border-black/10 bg-white/72 px-6 font-bold text-zinc-900 transition-all duration-300 hover:bg-white dark:border-white/10 dark:bg-white/[0.04] dark:text-white dark:hover:bg-white/[0.08]"
+                  className="h-12 w-full rounded-full px-6 font-medium text-zinc-600 transition-colors hover:bg-black/5 hover:text-zinc-900 focus-visible:ring-1 focus-visible:ring-zinc-400 sm:w-auto dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white dark:focus-visible:ring-zinc-600"        
                 >
-                  <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.back')}
+                  <ArrowLeft className="mr-2 h-4 w-4" /> {t('common.back')}     
                 </Button>
 
                 {step < totalSteps ? (
@@ -366,7 +400,7 @@ export default function WizardPage() {
                       (step === 2 && !formData.education.trim()) ||
                       (step === 3 && !formData.experience.trim())
                     }
-                    className="h-12 rounded-full bg-zinc-950 px-8 font-bold text-white transition-all duration-300 hover:bg-black/90 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                    className="h-12 w-full rounded-full bg-zinc-900 px-8 font-medium text-white shadow-sm transition-all hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 disabled:opacity-50 sm:w-auto dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white dark:focus-visible:ring-zinc-600 dark:focus-visible:ring-offset-zinc-950"
                   >
                     {t('wizard.continue')} <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -374,7 +408,7 @@ export default function WizardPage() {
                   <Button
                     onClick={handleSubmit}
                     disabled={isGenerating || !formData.skills.trim()}
-                    className="h-12 w-full rounded-full border-0 bg-zinc-950 px-8 font-bold text-white transition-all duration-300 hover:bg-black/90 disabled:opacity-50 sm:w-auto dark:bg-white dark:text-black dark:hover:bg-white/90"
+                    className="h-12 w-full rounded-full bg-zinc-900 px-8 font-medium text-white shadow-sm transition-all hover:bg-zinc-800 focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:ring-offset-2 disabled:opacity-50 sm:w-auto dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white dark:focus-visible:ring-zinc-600 dark:focus-visible:ring-offset-zinc-950"        
                   >
                     {isGenerating ? (
                       <>
@@ -388,18 +422,23 @@ export default function WizardPage() {
                   </Button>
                 )}
               </div>
-            </Card>
+            </div>
+            </div>
           </div>
         </main>
 
-        <AIChatSidebar
-          isOpen={isAISidebarOpen}
-          onClose={() => setIsAISidebarOpen(false)}
-          step={step}
-          formData={formData}
-          setFormData={setFormData}
-        />
+        <div className="pointer-events-auto">
+          <AIChatSidebar
+            isOpen={isAISidebarOpen}
+            onClose={() => setIsAISidebarOpen(false)}
+            step={step}
+            formData={formData}
+            setFormData={setFormData}
+          />
+        </div>
       </div>
     </div>
   );
 }
+
+

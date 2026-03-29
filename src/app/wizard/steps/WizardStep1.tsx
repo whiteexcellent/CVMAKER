@@ -1,4 +1,3 @@
-import { CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -42,18 +41,18 @@ export function WizardStep1({
   const { t } = useTranslation();
 
   return (
-    <>
-      <CardHeader className="pt-8 pb-4">
-        <CardTitle className="font-display text-3xl font-black tracking-tight text-zinc-950 dark:text-white">
+    <div className="space-y-12">
+      <div className="pt-8 pb-4">
+        <h2 className="font-display text-4xl font-semibold tracking-tight text-zinc-950 sm:text-5xl dark:text-white">
           {t('wizard.setTrajectory')}
-        </CardTitle>
-        <CardDescription className="mt-2 text-base font-light text-zinc-600 dark:text-white/55">
+        </h2>
+        <p className="mt-4 text-lg font-light text-zinc-600 dark:text-zinc-400">
           {t('wizard.setTrajectoryDesc')}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-8 px-8 pb-8">
+        </p>
+      </div>
+      <div className="space-y-8">
         {/* LinkedIn Pro Feature */}
-        <div className="liquid-glass relative rounded-[1.75rem] border border-black/8 bg-black/[0.02] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-black/12 hover:bg-black/[0.04] hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.36)]">
+        <div className="relative rounded-3xl border border-black/5 bg-white/50 p-6 transition-all hover:bg-white/80 dark:border-white/5 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50">
           <div className="flex items-start gap-4">
             <div className="rounded-full border border-black/8 bg-white/72 p-2.5 text-zinc-950 dark:border-white/10 dark:bg-white/10 dark:text-white">
               <Linkedin className="h-6 w-6" />
@@ -71,7 +70,7 @@ export function WizardStep1({
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Input
                   placeholder="https://linkedin.com/in/username"
-                  className="h-12 rounded-2xl border-black/10 bg-white/82 text-zinc-950 transition-all duration-300 placeholder:text-zinc-400 focus-visible:border-black/20 focus-visible:ring-black/6 dark:border-white/10 dark:bg-black/35 dark:text-white dark:placeholder:text-white/28 dark:focus-visible:border-white/20 dark:focus-visible:ring-white/10"
+                  className="h-12 rounded-2xl border-black/5 bg-white/50 px-4 text-zinc-900 placeholder:text-zinc-400 hover:bg-white/80 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-white/5 dark:bg-zinc-900/30 dark:text-zinc-100 dark:hover:bg-zinc-900/50 dark:focus-visible:ring-zinc-600"
                   value={linkedinUrl}
                   onChange={(e) => setLinkedinUrl(e.target.value)}
                   disabled={isImporting}
@@ -79,7 +78,7 @@ export function WizardStep1({
                 <Button
                   onClick={handleLinkedInImport}
                   disabled={isImporting || !linkedinUrl.trim()}
-                  className="h-12 rounded-full border-0 bg-zinc-950 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-black/90 active:scale-[0.98] sm:w-32 dark:bg-white dark:text-black dark:hover:bg-white/90"
+                  className="h-12 w-full rounded-2xl bg-zinc-900 px-6 font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50 sm:w-auto dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
                 >
                   {isImporting ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -141,64 +140,68 @@ export function WizardStep1({
               placeholder={t('wizard.targetRolePlaceholder')}
               value={formData.targetRole}
               onChange={(e) => setFormData({ ...formData, targetRole: e.target.value })}
-              className="h-12 rounded-2xl border-black/10 bg-white/82 text-zinc-950 transition-all duration-300 placeholder:text-zinc-400 focus-visible:border-black/20 focus-visible:ring-black/6 dark:border-white/10 dark:bg-black/35 dark:text-white dark:placeholder:text-white/28 dark:focus-visible:border-white/20 dark:focus-visible:ring-white/10"
+              className="h-12 rounded-2xl border-black/5 bg-white/50 px-4 text-zinc-900 placeholder:text-zinc-400 hover:bg-white/80 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-white/5 dark:bg-zinc-900/30 dark:text-zinc-100 dark:hover:bg-zinc-900/50 dark:focus-visible:ring-zinc-600"
             />
           </div>
 
           {/* Tailored CV Feature */}
-          <div className="liquid-glass relative mt-8 rounded-[1.75rem] border border-black/8 bg-black/[0.02] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-black/12 hover:bg-black/[0.04] hover:shadow-[0_24px_60px_rgba(15,23,42,0.08)] dark:border-white/10 dark:bg-white/[0.04] dark:hover:border-white/20 dark:hover:bg-white/[0.07] dark:hover:shadow-[0_24px_60px_rgba(0,0,0,0.36)]">
+          <div className="relative mt-8 rounded-3xl border border-black/5 bg-white/50 p-6 transition-all hover:bg-white/80 dark:border-white/5 dark:bg-zinc-900/30 dark:hover:bg-zinc-900/50">
             <div className="flex items-start gap-4">
-              <div className="rounded-full border border-black/8 bg-white/72 p-2.5 text-zinc-950 dark:border-white/10 dark:bg-white/10 dark:text-white">
+              <div className="rounded-2xl border border-black/5 bg-white p-3 text-zinc-900 shadow-sm dark:border-white/10 dark:bg-zinc-800 dark:text-zinc-100">
                 <Bot className="h-6 w-6" />
               </div>
               <div className="flex-1">
-                <h3 className="flex items-center gap-2 font-bold text-zinc-950 dark:text-white">
-                  {t('wizard.tailoredEngine')}
-                  <span className="rounded-full border border-black/8 bg-black/[0.04] px-2 py-0.5 text-[10px] font-bold tracking-wider text-zinc-700 uppercase dark:border-white/10 dark:bg-white/[0.08] dark:text-white/85">
-                    {t('wizard.twoCredits')}
-                  </span>
-                </h3>
-                <p className="mt-1 mb-4 text-sm font-light text-zinc-600 dark:text-white/55">
-                  {t('wizard.tailoredEngineDesc')}
-                </p>
+<h3 className="flex items-center gap-2 text-lg font-medium text-zinc-900 dark:text-zinc-100">
+                {t('wizard.tailoredEngine')}
+                <span className="rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+                  {t('wizard.twoCredits')}
+                </span>
+              </h3>
+              <p className="mt-1 mb-4 text-sm text-zinc-500 dark:text-zinc-400">
+                {t('wizard.tailoredEngineDesc')}
+              </p>
 
-                <div className="mb-6 flex flex-col gap-2 sm:flex-row">
-                  <Input
-                    placeholder="https://www.indeed.com/viewjob?jk=..."
-                    className="h-12 rounded-2xl border-black/10 bg-white/82 text-zinc-950 transition-all duration-300 placeholder:text-zinc-400 focus-visible:border-black/20 focus-visible:ring-black/6 dark:border-white/10 dark:bg-black/35 dark:text-white dark:placeholder:text-white/28 dark:focus-visible:border-white/20 dark:focus-visible:ring-white/10"
-                    value={jobUrl}
-                    onChange={(e) => setJobUrl(e.target.value)}
-                    disabled={isScrapingJob}
-                  />
-                  <Button
-                    onClick={handleScraping}
-                    disabled={isScrapingJob || !jobUrl.trim()}
-                    className="h-12 rounded-full border-0 bg-zinc-950 font-bold text-white transition-all duration-300 hover:scale-[1.02] hover:bg-black/90 active:scale-[0.98] sm:w-32 dark:bg-white dark:text-black dark:hover:bg-white/90"
-                  >
-                    {isScrapingJob ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      t('wizard.optimize')
-                    )}
-                  </Button>
-                </div>
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row">
+                <Input
+                  placeholder="https://www.indeed.com/viewjob?jk=..."
+                  className="h-12 flex-1 rounded-2xl border-black/5 bg-white px-4 text-zinc-900 placeholder:text-zinc-400 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-white/10 dark:bg-zinc-900 dark:text-zinc-100 dark:focus-visible:ring-zinc-600"
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  disabled={isScrapingJob}
+                />
+                <Button
+                  onClick={handleScraping}
+                  disabled={isScrapingJob || !jobUrl.trim()}
+                  className="h-12 w-full rounded-2xl bg-zinc-900 px-6 font-medium text-white shadow-sm transition-colors hover:bg-zinc-800 disabled:opacity-50 sm:w-auto dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+                >
+                  {isScrapingJob ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    t('wizard.optimize')
+                  )}
+                </Button>
+              </div>
 
-                <div className="space-y-3">
-                  <Label className="text-xs font-bold tracking-wider text-zinc-700 uppercase dark:text-white/80">
-                    {t('wizard.orPasteManual')}
-                  </Label>
-                  <Textarea
-                    placeholder={t('wizard.jobDescPlaceholder')}
-                    className="min-h-[150px] rounded-[1.5rem] border-black/10 bg-white/82 p-4 text-sm leading-relaxed text-zinc-950 transition-all duration-300 placeholder:text-zinc-400 focus-visible:border-black/20 focus-visible:ring-black/6 dark:border-white/10 dark:bg-black/35 dark:text-white dark:placeholder:text-white/28 dark:focus-visible:border-white/20 dark:focus-visible:ring-white/10"
-                    value={formData.jobDescription}
-                    onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
-                  />
-                </div>
+              <div className="space-y-3">
+                <Label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  {t('wizard.orPasteManual')}
+                </Label>
+                <Textarea
+                  placeholder={t('wizard.jobDescPlaceholder')}
+                  className="min-h-[150px] rounded-2xl border-black/5 bg-white/50 p-4 text-zinc-900 placeholder:text-zinc-400 hover:bg-white/80 focus-visible:ring-1 focus-visible:ring-zinc-400 dark:border-white/5 dark:bg-zinc-900/30 dark:text-zinc-100 dark:hover:bg-zinc-900/50 dark:focus-visible:ring-zinc-600"
+                  value={formData.jobDescription}
+                  onChange={(e) => setFormData({ ...formData, jobDescription: e.target.value })}
+                />
               </div>
             </div>
           </div>
         </div>
-      </CardContent>
-    </>
-  );
+      </div>
+    </div>
+  </div>
+);
 }
+
+
+
+

@@ -1,0 +1,28 @@
+﻿import Link from 'next/link';
+import { HugeiconsIcon } from "@hugeicons/react";
+import { BookOpen01Icon, Task01Icon, FolderOpenIcon, Tv01Icon, ArrowRight01Icon, LibraryIcon, Search01Icon } from "@hugeicons/core-free-icons";
+import { MagicCard } from '@/components/ui/magic-card';
+
+const libraryItems = [
+  {
+    title: 'Resume Templates',
+    description: 'ATS-ready structures tailored for modern hiring pipelines.',
+    href: '/cv',
+    icon: Task01Icon,
+    color: 'emerald',
+  },
+  {
+    title: 'Cover Letter Patterns',
+    description: 'High-conversion structures for specific roles and industries.',
+    href: '/cover-letter',
+    icon: FolderOpenIcon,
+    color: 'orange',
+  },
+  {
+    title: 'Presentation Deck Blocks',
+    description: 'Reusable slide narratives for interviews and pitch sessions.',
+    href: '/presentation',
+    icon: Tv01Icon,
+    color: 'cyan',
+  },
+];

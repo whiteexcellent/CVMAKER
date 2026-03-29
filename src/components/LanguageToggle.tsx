@@ -44,7 +44,7 @@ export function LanguageToggle() {
           className="group relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-black/8 bg-white/65 text-zinc-900 shadow-[0_8px_30px_rgba(15,23,42,0.08)] transition-all duration-300 outline-none hover:border-black/14 hover:bg-white/85 dark:border-white/10 dark:bg-white/[0.06] dark:text-white dark:shadow-[0_8px_30px_rgba(0,0,0,0.22)] dark:hover:border-white/20 dark:hover:bg-white/[0.1]"
         >
           <motion.span
-            key={locale}
+            key={`${locale}-span`}
             initial={{ scale: 0.72, opacity: 0.45 }}
             animate={{ scale: 1.45, opacity: 0 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
@@ -53,7 +53,7 @@ export function LanguageToggle() {
           <div className="absolute inset-0 translate-x-[-150%] skew-x-[-30deg] rounded-full bg-gradient-to-tr from-transparent via-white/55 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-[150%] dark:via-white/12"></div>
 
           <motion.div
-            key={locale}
+            key={`${locale}-div`}
             initial={{ rotate: -18, scale: 0.84, opacity: 0.6 }}
             animate={{ rotate: 0, scale: 1, opacity: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 22 }}
